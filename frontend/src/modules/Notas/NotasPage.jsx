@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Alert, Button, Card, message, Modal, Segmented, Space, Typography } from 'antd'
-import { FilePdfOutlined, HistoryOutlined, PlusOutlined } from '@ant-design/icons'
+import { FilePdfOutlined, FileWordOutlined, HistoryOutlined, PlusOutlined } from '@ant-design/icons'
 import NotaForm from './components/NotaForm.jsx'
 import NotaPreview from './components/NotaPreview.jsx'
 import NotasHistory from './components/NotasHistory.jsx'
 import { createEmptyNota, duplicateNota, normalizeNota } from './domain/nota.js'
 import { useNotas } from './hooks/useNotas.js'
 import { downloadNotaPdf } from './utils/downloadNotaPdf.js'
+import { downloadNotaWord } from './utils/downloadNotaWord.js'
 import './notas.css'
 
 const { Title, Text } = Typography
@@ -53,6 +54,13 @@ export default function NotasPage() {
   const duplicate = (nota) => { const copy = duplicateNota(nota); setEditing(null); setFormValue(copy); setDraft(copy); setView('crear') }
   const remove = async (id) => { try { await deleteNota(id); message.success('Nota eliminada') } catch (requestError) { message.error(requestError.message || 'No se pudo eliminar la nota') } }
   const createCertificado = (nota) => navigate('/certificados', { state: { notaOrigen: nota } })
+  const word = async (nota) => {
+    try {
+      await downloadNotaWord(nota)
+    } catch (error) {
+      message.error(error.message || 'No se pudo generar el Word')
+    }
+  }
 
   return <div className="notas-page">
     <header className="notas-page__header">
@@ -69,12 +77,12 @@ export default function NotasPage() {
         <NotaForm nota={formValue} onCancel={reset} onChange={handleChange} onSave={save} />
       </Card>
       <aside className="notas-preview-column">
-        <div className="notas-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Nota de entrega y verificación</Text></div><Button type="primary" icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => setPdfQueue(draft)}>Descargar PDF</Button></div>
+        <div className="notas-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Nota de entrega y verificación</Text></div><Space wrap><Button icon={<FileWordOutlined />} disabled={!draft.clienteEntidad} onClick={() => word(draft)}>Word</Button><Button type="primary" icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => setPdfQueue(draft)}>Descargar PDF</Button></Space></div>
         <div className="notas-preview-scroll"><NotaPreview nota={draft} /></div>
       </aside>
-    </div> : <Card title="Historial de notas" loading={loading} variant="borderless"><NotasHistory notas={notas} onCreateCertificado={createCertificado} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={setPdfQueue} onView={setViewing} /></Card>}
+    </div> : <Card title="Historial de notas" loading={loading} variant="borderless"><NotasHistory notas={notas} onCreateCertificado={createCertificado} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={setPdfQueue} onView={setViewing} onWord={word} /></Card>}
 
-    <Modal title="Vista previa de la nota" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={1000} footer={viewing ? <Button type="primary" icon={<FilePdfOutlined />} onClick={() => setPdfQueue(viewing)}>Descargar PDF</Button> : null}>
+    <Modal title="Vista previa de la nota" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={1000} footer={viewing ? <Space><Button icon={<FileWordOutlined />} onClick={() => word(viewing)}>Descargar Word</Button><Button type="primary" icon={<FilePdfOutlined />} onClick={() => setPdfQueue(viewing)}>Descargar PDF</Button></Space> : null}>
       {viewing && <div className="nota-modal-preview"><NotaPreview nota={viewing} /></div>}
     </Modal>
     {pdfQueue && <div className="nota-pdf-sandbox" aria-hidden="true"><NotaPreview ref={exportRef} nota={pdfQueue} /></div>}

@@ -171,7 +171,11 @@ model Nota {
   empresaEntregadoPor   String?    @map("empresa_entregado_por") @db.VarChar(20)
   entregadoNombre       String?    @map("entregado_nombre") @db.VarChar(200)
   entregadoCargo        String?    @map("entregado_cargo") @db.VarChar(200)
+  entregadoDocumento    String?    @map("entregado_documento") @db.VarChar(50)
+  entregadoTelefono     String?    @map("entregado_telefono") @db.VarChar(30)
   entregadoFirmaUrl     String?    @map("entregado_firma_url") @db.Text
+  entregadoSelloUrl     String?    @map("entregado_sello_url") @db.Text
+  ocultarSello          Boolean    @default(false) @map("ocultar_sello")
   recibidoNombre        String?    @map("recibido_nombre") @db.VarChar(200)
   recibidoCargo         String?    @map("recibido_cargo") @db.VarChar(200)
   recibidoFirmaUrl      String?    @map("recibido_firma_url") @db.Text

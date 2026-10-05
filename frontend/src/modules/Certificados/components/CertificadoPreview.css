@@ -84,3 +84,8 @@
 .certificado-preview--export > .document-footer {
   display: none;
 }
+
+.certificado-preview--export {
+  aspect-ratio: auto;
+  min-height: 0;
+}

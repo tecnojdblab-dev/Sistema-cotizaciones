@@ -30,9 +30,26 @@
   text-align: left;
 }
 
+.nota-preview__signature-space {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2cqw;
+}
+
+.nota-preview__stamp {
+  display: block;
+  margin: 1.2cqw auto 0;
+  width: auto;
+  max-width: 22%;
+  max-height: 7cqw;
+  object-fit: contain;
+}
+
 /* The PDF canvas should capture only document content, not preview filler space. */
 .nota-preview--export {
   min-height: 0;
+  padding-top: 3cqw;
   font-size: 12px;
 }
 

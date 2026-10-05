@@ -2,9 +2,11 @@ import { safeCertificateFileName } from './certificadoFormatters.js'
 import { DOCUMENT_FOOTER_TEXT } from '../../../shared/utils/documentFooter.js'
 
 const FORMATS = { a4: 'a4', letter: 'letter' }
+const FOOTER_SPACE_MM = 12
 const FOOTER_MARGIN_BOTTOM = 8
 const FOOTER_LINE_Y_OFFSET = 3
 const FOOTER_SIDE_MARGIN = 25
+const CONTINUATION_TOP_SPACE_MM = 4
 
 function drawFooter(pdf, pageWidth, pageHeight) {
   const footerY = pageHeight - FOOTER_MARGIN_BOTTOM
@@ -16,6 +18,38 @@ function drawFooter(pdf, pageWidth, pageHeight) {
   pdf.setFontSize(6.5)
   pdf.setTextColor(0, 0, 0)
   pdf.text(DOCUMENT_FOOTER_TEXT, pageWidth / 2, footerY, { align: 'center', maxWidth: pageWidth - FOOTER_SIDE_MARGIN * 2 })
+}
+
+function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels) {
+  const previewTop = previewElement.getBoundingClientRect().top
+  const scale = canvas.width / previewElement.scrollWidth
+  const itemsTable = previewElement.querySelector('.certificado-preview__items-table')
+  const itemsHeader = itemsTable?.querySelector('thead')
+  const itemsTableTop = itemsTable ? Math.round((itemsTable.getBoundingClientRect().top - previewTop) * scale) : null
+  const itemsTableBottom = itemsTable ? Math.round((itemsTable.getBoundingClientRect().bottom - previewTop) * scale) : null
+  const repeatedHeader = itemsHeader ? {
+    top: Math.round((itemsHeader.getBoundingClientRect().top - previewTop) * scale),
+    height: Math.round(itemsHeader.getBoundingClientRect().height * scale),
+  } : null
+  const boundaries = Array.from(previewElement.querySelectorAll('tr, .certificado-preview__warranty, .certificado-preview__signature'))
+    .map((element) => Math.round((element.getBoundingClientRect().bottom - previewTop) * scale))
+    .filter((position) => position > 0 && position < canvas.height)
+    .sort((left, right) => left - right)
+  const slices = []
+  let start = 0
+
+  while (start < canvas.height) {
+    const repeatsItemsHeader = Boolean(repeatedHeader && start > itemsTableTop && start < itemsTableBottom)
+    const availablePixels = contentPixels - (repeatsItemsHeader ? repeatedHeader.height + continuationTopSpacePixels : 0)
+    const target = Math.min(start + availablePixels, canvas.height)
+    const safeBoundary = boundaries.filter((position) => position > start && position <= target).pop()
+    // Prefer whitespace over splitting an item row or signature block.
+    const end = safeBoundary || target
+    slices.push({ start, end, repeatedHeader: repeatsItemsHeader ? { ...repeatedHeader, topSpace: continuationTopSpacePixels } : null })
+    start = end
+  }
+
+  return slices
 }
 
 export async function downloadCertificadoPdf(certificado, previewElement) {
@@ -33,15 +67,23 @@ export async function downloadCertificadoPdf(certificado, previewElement) {
       width: previewElement.scrollWidth, height: previewElement.scrollHeight,
     })
     const pagePixels = Math.round(canvas.width * height / width)
-    const pages = Math.max(1, Math.ceil(canvas.height / pagePixels))
-    for (let index = 0; index < pages; index += 1) {
+    const contentPixels = Math.round(canvas.width * (height - FOOTER_SPACE_MM) / width)
+    const continuationTopSpacePixels = Math.round(canvas.width * CONTINUATION_TOP_SPACE_MM / width)
+    const slices = pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels)
+    for (let index = 0; index < slices.length; index += 1) {
+      const { start, end, repeatedHeader } = slices[index]
       const pageCanvas = document.createElement('canvas')
       pageCanvas.width = canvas.width
       pageCanvas.height = pagePixels
       const context = pageCanvas.getContext('2d')
       context.fillStyle = '#fff'
       context.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
-      context.drawImage(canvas, 0, index * pagePixels, canvas.width, Math.min(pagePixels, canvas.height - index * pagePixels), 0, 0, canvas.width, Math.min(pagePixels, canvas.height - index * pagePixels))
+      const contentY = repeatedHeader ? repeatedHeader.height + repeatedHeader.topSpace : 0
+      if (repeatedHeader) {
+        context.drawImage(canvas, 0, repeatedHeader.top, canvas.width, repeatedHeader.height, 0, repeatedHeader.topSpace, canvas.width, repeatedHeader.height)
+      }
+      const contentHeight = end - start
+      context.drawImage(canvas, 0, start, canvas.width, contentHeight, 0, contentY, canvas.width, contentHeight)
       if (index) pdf.addPage(format, 'portrait')
       pdf.addImage(pageCanvas.toDataURL('image/jpeg', .95), 'JPEG', 0, 0, width, height)
       drawFooter(pdf, width, height)
@@ -51,4 +93,3 @@ export async function downloadCertificadoPdf(certificado, previewElement) {
     previewElement.classList.remove('certificado-preview--export')
   }
 }
-

@@ -59,7 +59,11 @@ export default function NotaForm({ nota, onCancel, onChange, onSave }) {
       empresaEntregadoPor,
       entregadoNombre: preset.firmanteNombre,
       entregadoCargo: preset.firmanteCargo,
+      entregadoDocumento: preset.firmanteDocumento,
+      entregadoTelefono: preset.firmanteTelefono,
       entregadoFirma: preset.firmaImagen,
+      entregadoSello: preset.selloImagen,
+      ocultarSello: false,
     })
     onChange(form.getFieldsValue(true))
   }
@@ -103,7 +107,11 @@ export default function NotaForm({ nota, onCancel, onChange, onSave }) {
   }
 
   return (
-    <Form form={form} layout="vertical" initialValues={createEmptyNota()} requiredMark={false} onValuesChange={(_, values) => onChange(values)}>
+    <Form form={form} layout="vertical" initialValues={createEmptyNota()} requiredMark={false} onValuesChange={(changed, values) => {
+      const ocultarSello = 'entregadoSello' in changed ? !changed.entregadoSello : values.ocultarSello
+      if ('entregadoSello' in changed) form.setFieldValue('ocultarSello', ocultarSello)
+      onChange({ ...values, ocultarSello })
+    }}>
       <Divider orientation="left" plain>Control del documento</Divider>
       <Row gutter={[16, 0]}>
         <Col xs={24} sm={6}><Form.Item label="Código" name="codigo" rules={[{ required: true }]}><Input /></Form.Item></Col>
@@ -170,32 +178,31 @@ export default function NotaForm({ nota, onCancel, onChange, onSave }) {
         )}
       </Form.List>
 
-      <Divider orientation="left" plain>Entrega y recepción</Divider>
+      <Divider orientation="left" plain>Firma</Divider>
+      <Form.Item label="Empresa firmante" name="empresaEntregadoPor">
+        <Segmented
+          block
+          options={[
+            { label: 'TecnoEquip', value: 'tecnoequip' },
+            { label: 'JDBlab', value: 'jdblab' },
+          ]}
+          onChange={selectEntregadoPor}
+        />
+      </Form.Item>
       <Row gutter={[16, 0]}>
-        <Col xs={24} md={12}>
-          <Card size="small" title="Entregado por" className="nota-signature-card">
-            <Form.Item label="Empresa firmante" name="empresaEntregadoPor">
-              <Segmented
-                block
-                options={[
-                  { label: 'TecnoEquip', value: 'tecnoequip' },
-                  { label: 'JDBlab', value: 'jdblab' },
-                ]}
-                onChange={selectEntregadoPor}
-              />
-            </Form.Item>
-            <Form.Item label="Nombre" name="entregadoNombre" rules={[{ required: true, whitespace: true, message: 'Ingresa el nombre de quien entrega' }]}><Input placeholder="Nombre completo" /></Form.Item>
-            <Form.Item label="Cargo" name="entregadoCargo"><Input placeholder="Cargo de quien entrega" /></Form.Item>
-            <Form.Item label="Imagen de firma" name="entregadoFirma"><ImageDataUrlField label="Firma de quien entrega" /></Form.Item>
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card size="small" title="Recibido por" className="nota-signature-card">
-            <Form.Item label="Nombre" name="recibidoNombre"><Input placeholder="Puede completarse al imprimir" /></Form.Item>
-            <Form.Item label="Cargo" name="recibidoCargo"><Input placeholder="Cargo de quien recibe" /></Form.Item>
-            <Form.Item label="Imagen de firma" name="recibidoFirma"><ImageDataUrlField label="Firma de quien recibe" /></Form.Item>
-          </Card>
-        </Col>
+        <Col xs={24} sm={12}><Form.Item label="Nombre del firmante" name="entregadoNombre" rules={[{ required: true, whitespace: true, message: 'Ingresa el nombre de quien entrega' }]}><Input placeholder="Nombre completo" /></Form.Item></Col>
+        <Col xs={24} sm={12}><Form.Item label="Cargo o descripción" name="entregadoCargo"><Input placeholder="Cargo" /></Form.Item></Col>
+        <Col xs={24} sm={12}><Form.Item label="Documento de identidad" name="entregadoDocumento"><Input placeholder="CI 4513773" /></Form.Item></Col>
+        <Col xs={24} sm={12}><Form.Item label="Teléfono" name="entregadoTelefono"><Input placeholder="Cel. 70769521" /></Form.Item></Col>
+        <Col xs={24} sm={12}><Form.Item label="Firma" name="entregadoFirma"><ImageDataUrlField label="Firma" /></Form.Item></Col>
+        <Col xs={24} sm={12}><Form.Item label="Sello o logotipo" name="entregadoSello"><ImageDataUrlField label="Sello" /></Form.Item></Col>
+      </Row>
+
+      <Divider orientation="left" plain>Recepción</Divider>
+      <Row gutter={[16, 0]}>
+        <Col xs={24} md={12}><Form.Item label="Nombre de quien recibe" name="recibidoNombre"><Input placeholder="Puede completarse al imprimir" /></Form.Item></Col>
+        <Col xs={24} md={12}><Form.Item label="Cargo de quien recibe" name="recibidoCargo"><Input placeholder="Cargo de quien recibe" /></Form.Item></Col>
+        <Col xs={24}><Form.Item label="Firma de quien recibe" name="recibidoFirma"><ImageDataUrlField label="Firma de quien recibe" /></Form.Item></Col>
       </Row>
 
       <div className="nota-form__footer">

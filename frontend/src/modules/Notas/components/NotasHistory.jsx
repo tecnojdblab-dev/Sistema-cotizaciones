@@ -1,12 +1,12 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { Button, Dropdown, Empty, Input, Popconfirm, Table, Tag, Typography } from 'antd'
-import { CopyOutlined, DeleteOutlined, EditOutlined, EyeOutlined, FilePdfOutlined, FileTextOutlined, MoreOutlined, SearchOutlined } from '@ant-design/icons'
+import { CopyOutlined, DeleteOutlined, EditOutlined, EyeOutlined, FilePdfOutlined, FileTextOutlined, FileWordOutlined, MoreOutlined, SearchOutlined } from '@ant-design/icons'
 import { NOTA_STATUS } from '../domain/nota.js'
 import { formatNotaDate } from '../utils/notaFormatters.js'
 
 const { Text } = Typography
 
-export default function NotasHistory({ notas, onCreateCertificado, onDelete, onDuplicate, onEdit, onPdf, onView }) {
+export default function NotasHistory({ notas, onCreateCertificado, onDelete, onDuplicate, onEdit, onPdf, onView, onWord }) {
   const [search, setSearch] = useState('')
   const term = useDeferredValue(search.trim().toLowerCase())
   const data = useMemo(() => term ? notas.filter((nota) =>
@@ -25,6 +25,7 @@ export default function NotasHistory({ notas, onCreateCertificado, onDelete, onD
           { key: 'edit', label: 'Editar', icon: <EditOutlined />, onClick: () => onEdit(nota) },
           { key: 'duplicate', label: 'Duplicar', icon: <CopyOutlined />, onClick: () => onDuplicate(nota) },
           { key: 'certificate', label: 'Crear certificado', icon: <FileTextOutlined />, onClick: () => onCreateCertificado(nota) },
+          { key: 'word', label: 'Descargar Word', icon: <FileWordOutlined />, onClick: () => onWord(nota) },
           { key: 'pdf', label: 'Descargar PDF', icon: <FilePdfOutlined />, onClick: () => onPdf(nota) },
           { type: 'divider' },
           { key: 'delete', danger: true, icon: <DeleteOutlined />, label: <Popconfirm title="Eliminar nota" description="Esta acción no se puede deshacer." okText="Eliminar" cancelText="Cancelar" onConfirm={() => onDelete(nota.id)}><span>Eliminar</span></Popconfirm> },

@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import logoJdblab from '../../../../images/logojdblab.jpeg.png'
 import DocumentFooter from '../../../shared/components/DocumentFooter.jsx'
+import { FIRMANTE_PRESETS } from '../../../shared/utils/firmantePresets.js'
 import { getNotaTotal } from '../domain/nota.js'
 import { formatMoney, formatMoneyInWords, formatNotaDate } from '../utils/notaFormatters.js'
 import './NotaPreview.css'
@@ -16,6 +17,7 @@ function descriptionAsText(value) {
 
 const NotaPreview = forwardRef(function NotaPreview({ nota }, ref) {
   const items = nota.items || []
+  const selloEntregado = nota.ocultarSello ? '' : nota.entregadoSello || FIRMANTE_PRESETS[nota.empresaEntregadoPor]?.selloImagen
   return (
     <article ref={ref} className={`nota-preview nota-preview--${nota.papel || 'letter'}`}>
       <table className="nota-preview__header-table">
@@ -69,6 +71,9 @@ const NotaPreview = forwardRef(function NotaPreview({ nota }, ref) {
           </div>
           <span className="nota-preview__signer-name">{nota.entregadoNombre || '[Persona seleccionada]'}</span>
           <span className="nota-preview__signer-role">{nota.entregadoCargo || '[Cargo]'}</span>
+          {nota.entregadoDocumento && <span className="nota-preview__signer-role">{nota.entregadoDocumento}</span>}
+          {nota.entregadoTelefono && <span className="nota-preview__signer-role">{nota.entregadoTelefono}</span>}
+          {selloEntregado && <img className="nota-preview__stamp" src={selloEntregado} alt="Sello de la empresa" />}
         </div>
         <div>
           <strong>RECIBIDO POR</strong>

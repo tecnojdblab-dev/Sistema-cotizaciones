@@ -5,6 +5,7 @@ const FOOTER_SPACE_MM = 12
 const FOOTER_MARGIN_BOTTOM = 8
 const FOOTER_LINE_Y_OFFSET = 3
 const FOOTER_SIDE_MARGIN = 25
+const CONTINUATION_TOP_SPACE_MM = 7
 
 function drawFooter(pdf, pageWidth, pageHeight) {
   const footerY = pageHeight - FOOTER_MARGIN_BOTTOM
@@ -18,9 +19,17 @@ function drawFooter(pdf, pageWidth, pageHeight) {
   pdf.text(DOCUMENT_FOOTER_TEXT, pageWidth / 2, footerY, { align: 'center', maxWidth: pageWidth - FOOTER_SIDE_MARGIN * 2 })
 }
 
-function pageBreaks(previewElement, canvas, contentPixels) {
+function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels) {
   const previewTop = previewElement.getBoundingClientRect().top
   const scale = canvas.width / previewElement.scrollWidth
+  const itemsTable = previewElement.querySelector('.nota-preview__items-table')
+  const itemsHeader = itemsTable?.querySelector('thead')
+  const itemsTableTop = itemsTable ? Math.round((itemsTable.getBoundingClientRect().top - previewTop) * scale) : null
+  const itemsTableBottom = itemsTable ? Math.round((itemsTable.getBoundingClientRect().bottom - previewTop) * scale) : null
+  const repeatedHeader = itemsHeader ? {
+    top: Math.round((itemsHeader.getBoundingClientRect().top - previewTop) * scale),
+    height: Math.round(itemsHeader.getBoundingClientRect().height * scale),
+  } : null
   const boundaries = Array.from(previewElement.querySelectorAll('tr, .nota-preview__signatures'))
     .map((element) => Math.round((element.getBoundingClientRect().bottom - previewTop) * scale))
     .filter((position) => position > 0 && position < canvas.height)
@@ -29,10 +38,13 @@ function pageBreaks(previewElement, canvas, contentPixels) {
   let start = 0
 
   while (start < canvas.height) {
-    const target = Math.min(start + contentPixels, canvas.height)
+    const repeatsItemsHeader = Boolean(repeatedHeader && start > itemsTableTop && start < itemsTableBottom)
+    const availablePixels = contentPixels - (repeatsItemsHeader ? repeatedHeader.height + continuationTopSpacePixels : 0)
+    const target = Math.min(start + availablePixels, canvas.height)
     const safeBoundary = boundaries.filter((position) => position > start && position <= target).pop()
-    const end = safeBoundary && safeBoundary - start >= contentPixels * 0.35 ? safeBoundary : target
-    slices.push({ start, end })
+    // Prefer whitespace over splitting an item row between PDF pages.
+    const end = safeBoundary || target
+    slices.push({ start, end, repeatedHeader: repeatsItemsHeader ? { ...repeatedHeader, topSpace: continuationTopSpacePixels } : null })
     start = end
   }
 
@@ -59,17 +71,22 @@ export async function downloadNotaPdf(nota, previewElement) {
     })
     const pagePixels = Math.round(canvas.width * pageHeight / pageWidth)
     const contentPixels = Math.round(canvas.width * (pageHeight - FOOTER_SPACE_MM) / pageWidth)
-    const slices = pageBreaks(previewElement, canvas, contentPixels)
+    const continuationTopSpacePixels = Math.round(canvas.width * CONTINUATION_TOP_SPACE_MM / pageWidth)
+    const slices = pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels)
     for (let index = 0; index < slices.length; index += 1) {
-      const { start, end } = slices[index]
+      const { start, end, repeatedHeader } = slices[index]
       const slice = document.createElement('canvas')
       slice.width = canvas.width
       slice.height = pagePixels
       const context = slice.getContext('2d')
       context.fillStyle = '#fff'
       context.fillRect(0, 0, slice.width, slice.height)
+      const contentY = repeatedHeader ? repeatedHeader.height + repeatedHeader.topSpace : 0
+      if (repeatedHeader) {
+        context.drawImage(canvas, 0, repeatedHeader.top, canvas.width, repeatedHeader.height, 0, repeatedHeader.topSpace, canvas.width, repeatedHeader.height)
+      }
       const height = end - start
-      context.drawImage(canvas, 0, start, canvas.width, height, 0, 0, canvas.width, height)
+      context.drawImage(canvas, 0, start, canvas.width, height, 0, contentY, canvas.width, height)
       if (index) pdf.addPage(format, 'portrait')
       pdf.addImage(slice.toDataURL('image/jpeg', 0.96), 'JPEG', 0, 0, pageWidth, pageHeight)
       drawFooter(pdf, pageWidth, pageHeight)
