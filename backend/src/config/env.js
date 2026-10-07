@@ -12,7 +12,7 @@ function requireEnv(name) {
 
 // Parse ALLOWED_ORIGINS from comma-separated env var
 const getAllowedOrigins = () => {
-  const origins = process.env.ALLOWED_ORIGINS || 'ALLOWED_ORIGINS=https://sistema-cotizaciones-eta.vercel.app,https://sistema-cotizaciones-git-main-tecnojdblab-7365.vercel.app';
+  const origins = process.env.ALLOWED_ORIGINS || 'http://localhost:5173';
   return origins.split(',').map((origin) => origin.trim());
 };
 

@@ -47,10 +47,17 @@
 }
 
 /* The PDF canvas should capture only document content, not preview filler space. */
-.nota-preview--export {
+.nota-preview.nota-preview--export {
+  aspect-ratio: auto;
   min-height: 0;
-  padding-top: 3cqw;
+  /* 12.7 mm on a 215.9 mm (letter) page. */
+  padding: 5.882353%;
   font-size: 12px;
+}
+
+.nota-preview.nota-preview--export.nota-preview--a4 {
+  /* 12.7 mm on a 210 mm page. */
+  padding: 6.047619%;
 }
 
 .nota-preview--export .nota-preview__signatures {

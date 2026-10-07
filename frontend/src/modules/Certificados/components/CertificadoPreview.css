@@ -85,7 +85,15 @@
   display: none;
 }
 
-.certificado-preview--export {
+/* Override the A4/letter preview ratio regardless of stylesheet load order. */
+.certificado-preview.certificado-preview--export {
   aspect-ratio: auto;
   min-height: 0;
+  /* 12.7 mm on a 210 mm page; percentage padding uses the page width. */
+  padding: 6.047619%;
+}
+
+.certificado-preview.certificado-preview--export.certificado-preview--letter {
+  /* 12.7 mm on a 215.9 mm page. */
+  padding: 5.882353%;
 }

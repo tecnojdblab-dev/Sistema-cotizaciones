@@ -79,7 +79,7 @@ export default function Sidebar({ isMobile = false, drawerOpen = false, onDrawer
       width={214}
     >
       <div className="app-sidebar__brand">
-        {collapsed ? 'JDB' : 'Sistema de Cotizaciones'}
+        {collapsed ? 'JDB' : 'JDBlab & TECNOequip'}
       </div>
 
       {menuContent}

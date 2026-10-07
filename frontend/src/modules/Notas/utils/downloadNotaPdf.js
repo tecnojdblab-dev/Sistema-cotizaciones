@@ -1,11 +1,12 @@
 import { safeNotaFileName } from './notaFormatters.js'
 import { DOCUMENT_FOOTER_TEXT } from '../../../shared/utils/documentFooter.js'
 
-const FOOTER_SPACE_MM = 12
-const FOOTER_MARGIN_BOTTOM = 8
+const PAGE_MARGIN_MM = 12.7
+const FOOTER_MARGIN_BOTTOM = PAGE_MARGIN_MM
 const FOOTER_LINE_Y_OFFSET = 3
-const FOOTER_SIDE_MARGIN = 25
-const CONTINUATION_TOP_SPACE_MM = 7
+const FOOTER_SPACE_MM = FOOTER_MARGIN_BOTTOM + FOOTER_LINE_Y_OFFSET + 3
+const FOOTER_SIDE_MARGIN = PAGE_MARGIN_MM
+const CONTINUATION_TOP_SPACE_MM = PAGE_MARGIN_MM
 
 function drawFooter(pdf, pageWidth, pageHeight) {
   const footerY = pageHeight - FOOTER_MARGIN_BOTTOM
@@ -39,12 +40,13 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
 
   while (start < canvas.height) {
     const repeatsItemsHeader = Boolean(repeatedHeader && start > itemsTableTop && start < itemsTableBottom)
-    const availablePixels = contentPixels - (repeatsItemsHeader ? repeatedHeader.height + continuationTopSpacePixels : 0)
+    const topSpace = start > 0 ? continuationTopSpacePixels : 0
+    const availablePixels = contentPixels - topSpace - (repeatsItemsHeader ? repeatedHeader.height : 0)
     const target = Math.min(start + availablePixels, canvas.height)
     const safeBoundary = boundaries.filter((position) => position > start && position <= target).pop()
-    // Prefer whitespace over splitting an item row between PDF pages.
-    const end = safeBoundary || target
-    slices.push({ start, end, repeatedHeader: repeatsItemsHeader ? { ...repeatedHeader, topSpace: continuationTopSpacePixels } : null })
+    // Only split at a safe boundary when the remaining canvas needs another page.
+    const end = target === canvas.height ? target : (safeBoundary || target)
+    slices.push({ start, end, topSpace, repeatedHeader: repeatsItemsHeader ? { ...repeatedHeader, topSpace } : null })
     start = end
   }
 
@@ -74,14 +76,14 @@ export async function downloadNotaPdf(nota, previewElement) {
     const continuationTopSpacePixels = Math.round(canvas.width * CONTINUATION_TOP_SPACE_MM / pageWidth)
     const slices = pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels)
     for (let index = 0; index < slices.length; index += 1) {
-      const { start, end, repeatedHeader } = slices[index]
+      const { start, end, topSpace, repeatedHeader } = slices[index]
       const slice = document.createElement('canvas')
       slice.width = canvas.width
       slice.height = pagePixels
       const context = slice.getContext('2d')
       context.fillStyle = '#fff'
       context.fillRect(0, 0, slice.width, slice.height)
-      const contentY = repeatedHeader ? repeatedHeader.height + repeatedHeader.topSpace : 0
+      const contentY = topSpace + (repeatedHeader ? repeatedHeader.height : 0)
       if (repeatedHeader) {
         context.drawImage(canvas, 0, repeatedHeader.top, canvas.width, repeatedHeader.height, 0, repeatedHeader.topSpace, canvas.width, repeatedHeader.height)
       }

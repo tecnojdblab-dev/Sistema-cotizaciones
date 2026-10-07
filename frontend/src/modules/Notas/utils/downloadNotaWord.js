@@ -6,6 +6,7 @@ import { formatMoney, formatMoneyInWords, formatNotaDate, safeNotaFileName } fro
 
 const BLUE = '80DDF4'
 const borders = { top: { style: 'single', size: 8 }, bottom: { style: 'single', size: 8 }, left: { style: 'single', size: 8 }, right: { style: 'single', size: 8 }, insideHorizontal: { style: 'single', size: 8 }, insideVertical: { style: 'single', size: 8 } }
+const noBorders = { top: { style: 'none' }, bottom: { style: 'none' }, left: { style: 'none' }, right: { style: 'none' }, insideHorizontal: { style: 'none' }, insideVertical: { style: 'none' } }
 
 function text(docx, value, options = {}) {
   return new docx.TextRun({ text: String(value || ''), font: 'Arial', size: 18, ...options })
@@ -18,12 +19,12 @@ function paragraph(docx, value, options = {}) {
 function cell(docx, children, options = {}) {
   return new docx.TableCell({
     children: Array.isArray(children) ? children : [paragraph(docx, children, options)],
-    borders,
+    borders: options.borderless ? noBorders : borders,
     shading: options.blue ? { fill: BLUE } : undefined,
     columnSpan: options.columnSpan,
     rowSpan: options.rowSpan,
     width: options.width ? { size: options.width, type: docx.WidthType.PERCENTAGE } : undefined,
-    verticalAlign: docx.VerticalAlign.CENTER,
+    verticalAlign: options.borderless ? docx.VerticalAlign.TOP : docx.VerticalAlign.CENTER,
   })
 }
 
@@ -96,10 +97,10 @@ export async function downloadNotaWord(nota) {
     new docx.TableRow({ children: [cell(docx, 'TOTAL Bs:', { blue: true, columnSpan: 6, alignment: docx.AlignmentType.RIGHT, run: { bold: true } }), cell(docx, formatMoney(getNotaTotal(nota)), { run: { bold: true }, alignment: docx.AlignmentType.RIGHT })] }),
     new docx.TableRow({ children: [cell(docx, `SON: ${formatMoneyInWords(getNotaTotal(nota))}`, { blue: true, columnSpan: 7, run: { bold: true } })] }),
   ] })
-  const signatures = new docx.Table({ width: { size: 100, type: docx.WidthType.PERCENTAGE }, borders: { top: { style: 'none' }, bottom: { style: 'none' }, left: { style: 'none' }, right: { style: 'none' }, insideHorizontal: { style: 'none' }, insideVertical: { style: 'none' } }, rows: [
+  const signatures = new docx.Table({ width: { size: 100, type: docx.WidthType.PERCENTAGE }, borders: noBorders, rows: [
     new docx.TableRow({ children: [
-      cell(docx, [paragraph(docx, 'ENTREGADO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), new docx.Paragraph({ children: firmaEntregado ? [firmaEntregado] : [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160 } }), paragraph(docx, nota.entregadoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.entregadoCargo || '', { alignment: docx.AlignmentType.CENTER }), paragraph(docx, nota.entregadoDocumento || '', { alignment: docx.AlignmentType.CENTER }), paragraph(docx, nota.entregadoTelefono || '', { alignment: docx.AlignmentType.CENTER }), ...(sello ? [new docx.Paragraph({ children: [sello], alignment: docx.AlignmentType.CENTER, spacing: { before: 100 } })] : [])], { width: 50 }),
-      cell(docx, [paragraph(docx, 'RECIBIDO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), new docx.Paragraph({ children: firmaRecibido ? [firmaRecibido] : [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160 } }), paragraph(docx, nota.recibidoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.recibidoCargo || '', { alignment: docx.AlignmentType.CENTER })], { width: 50 }),
+      cell(docx, [paragraph(docx, 'ENTREGADO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), new docx.Paragraph({ children: firmaEntregado ? [firmaEntregado] : [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160 } }), paragraph(docx, nota.entregadoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.entregadoCargo || '', { alignment: docx.AlignmentType.CENTER }), paragraph(docx, nota.entregadoDocumento || '', { alignment: docx.AlignmentType.CENTER }), paragraph(docx, nota.entregadoTelefono || '', { alignment: docx.AlignmentType.CENTER }), ...(sello ? [new docx.Paragraph({ children: [sello], alignment: docx.AlignmentType.CENTER, spacing: { before: 100 } })] : [])], { width: 50, borderless: true }),
+      cell(docx, [paragraph(docx, 'RECIBIDO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), new docx.Paragraph({ children: firmaRecibido ? [firmaRecibido] : [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160 } }), paragraph(docx, nota.recibidoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.recibidoCargo || '', { alignment: docx.AlignmentType.CENTER })], { width: 50, borderless: true }),
     ] }),
   ] })
   const document = new docx.Document({
