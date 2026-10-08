@@ -1,4 +1,4 @@
-import { formatCertificateDate, safeCertificateFileName } from './certificadoFormatters.js'
+import { formatCertificateDate, safeCertificateFileName, sanitizeCertificateHtml } from './certificadoFormatters.js'
 import { createDocumentWordFooter } from '../../../shared/utils/documentFooter.js'
 
 const BLUE = '82DDF5'
@@ -17,8 +17,44 @@ function paragraph(docx, value, options = {}) {
 function cell(docx, children, options = {}) {
   return new docx.TableCell({ children: Array.isArray(children) ? children : [paragraph(docx, children, options)], shading: options.blue ? { fill: BLUE } : undefined, columnSpan: options.columnSpan, rowSpan: options.rowSpan, width: options.width ? { size: options.width, type: docx.WidthType.PERCENTAGE } : undefined, verticalAlign: docx.VerticalAlign.CENTER })
 }
-function htmlText(html) {
-  const element = document.createElement('div'); element.innerHTML = html || ''; return element.textContent || ''
+function conditionParagraphs(docx, html) {
+  const element = document.createElement('div')
+  element.innerHTML = sanitizeCertificateHtml(html)
+  const blocks = []
+  let runs = []
+  const flush = () => {
+    if (runs.length) blocks.push(runs)
+    runs = []
+  }
+  const visit = (node, formatting = { italics: true }) => {
+    if (node.nodeType === 3) {
+      if (node.textContent.trim() || runs.length) runs.push(text(docx, node.textContent, formatting))
+      return
+    }
+    if (node.nodeType !== 1) return
+    const tag = node.tagName
+    if (tag === 'BR') {
+      runs.push(new docx.TextRun({ break: 1 }))
+      return
+    }
+    const isBlock = ['P', 'DIV', 'LI', 'UL', 'OL'].includes(tag)
+    if (isBlock) flush()
+    const next = { ...formatting }
+    if (tag === 'B' || tag === 'STRONG') next.bold = true
+    if (tag === 'I' || tag === 'EM') next.italics = true
+    if (tag === 'U') next.underline = {}
+    if (tag === 'S') next.strike = true
+    node.childNodes.forEach((child) => visit(child, next))
+    if (isBlock) flush()
+  }
+  element.childNodes.forEach((node) => visit(node))
+  flush()
+  if (!blocks.length) return [paragraph(docx, '')]
+  return blocks.map((children, index) => new docx.Paragraph({
+    children,
+    alignment: docx.AlignmentType.JUSTIFIED,
+    spacing: { after: index < blocks.length - 1 ? 160 : 0 },
+  }))
 }
 function loadImage(source) {
   return new Promise((resolve, reject) => {
@@ -84,8 +120,16 @@ export async function downloadCertificadoWord(certificado, logoSource) {
       cell(docx, item.aclaraciones),
     ] })),
   ] })
-  const conditions = htmlText(certificado.condicionesHtml).split(/\n+/).filter(Boolean).map((line) => paragraph(docx, line, { alignment: docx.AlignmentType.JUSTIFIED, spacing: { after: 160 }, run: { italics: true } }))
-  const children = [header, paragraph(docx, '', { spacing: { after: 120 } }), info, paragraph(docx, '1.  DESCRIPCIÓN DE LA ENTREGA.', { spacing: { before: 240, after: 160 }, run: { bold: true } }), items, paragraph(docx, 'CERTIFICADO DE GARANTÍA', { alignment: docx.AlignmentType.CENTER, spacing: { before: 240, after: 120 }, run: { bold: true } }), ...conditions]
+  const warranty = new docx.Table({
+    width: { size: 100, type: docx.WidthType.PERCENTAGE },
+    borders,
+    margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    rows: [
+      new docx.TableRow({ children: [cell(docx, 'CERTIFICADO DE GARANTÍA', { blue: true, alignment: docx.AlignmentType.CENTER })] }),
+      new docx.TableRow({ children: [cell(docx, conditionParagraphs(docx, certificado.condicionesHtml))] }),
+    ],
+  })
+  const children = [header, paragraph(docx, '', { spacing: { after: 120 } }), info, paragraph(docx, '1.  DESCRIPCIÓN DE LA ENTREGA.', { spacing: { before: 240, after: 160 }, run: { bold: true } }), items, paragraph(docx, '', { spacing: { after: 120 } }), warranty]
   if (signature) children.push(new docx.Paragraph({ children: [signature], alignment: docx.AlignmentType.CENTER, spacing: { before: 180 } }))
   const signerLines = [
     { value: certificado.firmanteNombre?.toUpperCase(), bold: true },
