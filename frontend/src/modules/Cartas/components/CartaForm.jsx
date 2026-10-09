@@ -84,11 +84,7 @@ export default function CartaForm({ carta, onCancel, onChange, onSave }) {
             <Input type="date" />
           </Form.Item>
         </Col>
-        <Col xs={24} sm={12}>
-          <Form.Item label="Número de carta" name="numero">
-            <Input placeholder="CRLP-728/2026" />
-          </Form.Item>
-        </Col>
+
         <Col xs={24} sm={12}>
           <Form.Item label="Tamaño de hoja" name="papel">
             <Segmented
@@ -200,8 +196,8 @@ export default function CartaForm({ carta, onCancel, onChange, onSave }) {
           </Form.Item>
         </Col>
         <Col xs={24} sm={12}>
-          <Form.Item label="Documento de identidad" name="firmanteDocumento">
-            <Input placeholder="CI 4513773" />
+          <Form.Item label="NIT" name="firmanteDocumento">
+            <Input placeholder="NIT: 4513773014" />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12}>

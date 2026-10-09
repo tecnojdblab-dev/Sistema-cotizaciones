@@ -201,7 +201,7 @@ export default function CertificadoForm({ certificado, onCancel, onChange, onSav
       <Row gutter={[16, 0]}>
         <Col xs={24} sm={12}><Form.Item label="Nombre del firmante" name="firmanteNombre"><Input placeholder="Nombre completo" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Cargo o descripción" name="firmanteCargo"><Input placeholder="Cargo" /></Form.Item></Col>
-        <Col xs={24} sm={12}><Form.Item label="Documento de identidad" name="firmanteDocumento"><Input placeholder="CI 4513773" /></Form.Item></Col>
+        <Col xs={24} sm={12}><Form.Item label="NIT" name="firmanteDocumento"><Input placeholder="NIT: 4513773014" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Teléfono" name="firmanteTelefono"><Input placeholder="Cel. 70769521" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Firma" name="firmaImagen"><ImageDataUrlField label="Firma" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Sello o logotipo" name="selloImagen"><ImageDataUrlField label="Sello" /></Form.Item></Col>

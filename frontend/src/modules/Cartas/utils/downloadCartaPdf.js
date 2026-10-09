@@ -2,6 +2,7 @@ import headerLogo from '../../../../images/cabezeralogo.webp'
 import { DOCUMENT_FOOTER_TEXT } from '../../../shared/utils/documentFooter.js'
 import { PAPER_SIZES } from '../domain/carta.js'
 import { safeFileName } from './cartaFormatters.js'
+import { paginateCartaCanvas } from './cartaPdfPagination.js'
 
 /**
  * Converts an image source (URL or data-URI) to a data-URL string suitable
@@ -47,6 +48,8 @@ const HEADER_LOGO_MAX_HEIGHT_MM = 20
 const FOOTER_MARGIN_BOTTOM = 8
 const FOOTER_LINE_Y_OFFSET = 3
 const SIDE_MARGIN = 25
+const HEADER_CONTENT_GAP = 5
+const FOOTER_CONTENT_GAP = 4
 
 /**
  * Draws the logo-only header on the current page of the PDF.
@@ -84,7 +87,30 @@ function drawPageFooter(pdf, pageWidth, pageHeight) {
   pdf.text(DOCUMENT_FOOTER_TEXT, centerX, footerY, { align: 'center', maxWidth: pageWidth - SIDE_MARGIN * 2 })
 }
 
-function createPageCanvas(sourceCanvas, sourceY, sourceHeight, fullPageHeight) {
+function getProtectedRanges(previewElement, scale) {
+  const previewTop = previewElement.getBoundingClientRect().top
+  const ranges = []
+  const addRect = (rect) => {
+    if (!rect.width || !rect.height) return
+    ranges.push({
+      top: Math.floor((rect.top - previewTop) * scale),
+      bottom: Math.ceil((rect.bottom - previewTop) * scale),
+    })
+  }
+  const walker = document.createTreeWalker(previewElement, NodeFilter.SHOW_TEXT)
+  const range = document.createRange()
+  while (walker.nextNode()) {
+    if (!walker.currentNode.textContent.trim()) continue
+    range.selectNodeContents(walker.currentNode)
+    Array.from(range.getClientRects()).forEach(addRect)
+  }
+  previewElement.querySelectorAll('img, .carta-preview__signature').forEach((element) => {
+    addRect(element.getBoundingClientRect())
+  })
+  return ranges
+}
+
+function createPageCanvas(sourceCanvas, sourceY, sourceHeight, fullPageHeight, topSpace) {
   const pageCanvas = document.createElement('canvas')
   pageCanvas.width = sourceCanvas.width
   pageCanvas.height = fullPageHeight
@@ -98,7 +124,7 @@ function createPageCanvas(sourceCanvas, sourceY, sourceHeight, fullPageHeight) {
     sourceCanvas.width,
     sourceHeight,
     0,
-    0,
+    topSpace,
     sourceCanvas.width,
     sourceHeight,
   )
@@ -134,13 +160,20 @@ export async function downloadCartaPdf(carta, previewElement) {
     })
 
     const pageHeightInPixels = Math.round(canvas.width * (pageHeight / pageWidth))
-    const pageCount = Math.max(1, Math.ceil(canvas.height / pageHeightInPixels))
+    const pixelsPerMm = canvas.width / pageWidth
+    const canvasScale = canvas.width / previewElement.scrollWidth
+    const bottomPadding = parseFloat(getComputedStyle(previewElement).paddingBottom) * canvasScale
+    const pages = paginateCartaCanvas({
+      contentHeight: Math.max(1, canvas.height - Math.floor(bottomPadding)),
+      pageHeight: pageHeightInPixels,
+      headerSpace: Math.ceil((HEADER_MARGIN_TOP + HEADER_LOGO_MAX_HEIGHT_MM + HEADER_CONTENT_GAP) * pixelsPerMm),
+      footerSpace: Math.ceil((FOOTER_MARGIN_BOTTOM + FOOTER_LINE_Y_OFFSET + FOOTER_CONTENT_GAP) * pixelsPerMm),
+      protectedRanges: getProtectedRanges(previewElement, canvasScale),
+    })
 
-    for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
-      const sourceY = pageIndex * pageHeightInPixels
-      const remainingHeight = canvas.height - sourceY
-      const sourceHeight = Math.min(pageHeightInPixels, remainingHeight)
-      const pageCanvas = createPageCanvas(canvas, sourceY, sourceHeight, pageHeightInPixels)
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+      const { start, height, topSpace } = pages[pageIndex]
+      const pageCanvas = createPageCanvas(canvas, start, height, pageHeightInPixels, topSpace)
 
       if (pageIndex > 0) pdf.addPage(paper.format, 'portrait')
 

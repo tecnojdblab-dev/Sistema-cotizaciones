@@ -192,7 +192,7 @@ export default function NotaForm({ nota, onCancel, onChange, onSave }) {
       <Row gutter={[16, 0]}>
         <Col xs={24} sm={12}><Form.Item label="Nombre del firmante" name="entregadoNombre" rules={[{ required: true, whitespace: true, message: 'Ingresa el nombre de quien entrega' }]}><Input placeholder="Nombre completo" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Cargo o descripción" name="entregadoCargo"><Input placeholder="Cargo" /></Form.Item></Col>
-        <Col xs={24} sm={12}><Form.Item label="Documento de identidad" name="entregadoDocumento"><Input placeholder="CI 4513773" /></Form.Item></Col>
+        <Col xs={24} sm={12}><Form.Item label="NIT" name="entregadoDocumento"><Input placeholder="NIT: 4513773014" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Teléfono" name="entregadoTelefono"><Input placeholder="Cel. 70769521" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Firma" name="entregadoFirma"><ImageDataUrlField label="Firma" /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item label="Sello o logotipo" name="entregadoSello"><ImageDataUrlField label="Sello" /></Form.Item></Col>
