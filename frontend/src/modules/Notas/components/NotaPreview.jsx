@@ -67,13 +67,13 @@ const NotaPreview = forwardRef(function NotaPreview({ nota }, ref) {
         <div>
           <strong>ENTREGADO POR</strong>
           <div className="nota-preview__signature-space">
-            {nota.entregadoFirma && <img src={nota.entregadoFirma} alt="Firma de quien entrega" />}
+            {nota.entregadoFirma && <img className={nota.empresaEntregadoPor ? 'nota-preview__signature-image--preset' : undefined} src={nota.entregadoFirma} alt="Firma de quien entrega" />}
           </div>
           <span className="nota-preview__signer-name">{nota.entregadoNombre || '[Persona seleccionada]'}</span>
           <span className="nota-preview__signer-role">{nota.entregadoCargo || '[Cargo]'}</span>
           {nota.entregadoDocumento && <span className="nota-preview__signer-role">{nota.entregadoDocumento}</span>}
           {nota.entregadoTelefono && <span className="nota-preview__signer-role">{nota.entregadoTelefono}</span>}
-          {selloEntregado && <img className="nota-preview__stamp" src={selloEntregado} alt="Sello de la empresa" />}
+          {selloEntregado && <img className={`nota-preview__stamp${nota.empresaEntregadoPor === 'jdblab' ? ' nota-preview__stamp--jdblab' : ''}`} src={selloEntregado} alt="Sello de la empresa" />}
         </div>
         <div>
           <strong>RECIBIDO POR</strong>

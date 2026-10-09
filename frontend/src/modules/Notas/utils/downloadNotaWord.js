@@ -5,6 +5,10 @@ import { getNotaTotal } from '../domain/nota.js'
 import { formatMoney, formatMoneyInWords, formatNotaDate, safeNotaFileName } from './notaFormatters.js'
 
 const BLUE = '80DDF4'
+const JDBLAB_STAMP_SIZE = Object.freeze({
+  width: Math.round(4.5 * 96 / 2.54),
+  height: Math.round(1.8 * 96 / 2.54),
+})
 const borders = { top: { style: 'single', size: 8 }, bottom: { style: 'single', size: 8 }, left: { style: 'single', size: 8 }, right: { style: 'single', size: 8 }, insideHorizontal: { style: 'single', size: 8 }, insideVertical: { style: 'single', size: 8 } }
 const noBorders = { top: { style: 'none' }, bottom: { style: 'none' }, left: { style: 'none' }, right: { style: 'none' }, insideHorizontal: { style: 'none' }, insideVertical: { style: 'none' } }
 
@@ -37,17 +41,19 @@ function loadImage(source) {
   })
 }
 
-async function imageRun(source, docx, maxWidth, maxHeight) {
+async function imageRun(source, docx, maxWidth, maxHeight, exactSize) {
   if (!source) return null
   const image = await loadImage(source)
   const scale = Math.min(maxWidth / image.naturalWidth, maxHeight / image.naturalHeight, 1)
+  const width = exactSize?.width || Math.max(1, Math.round(image.naturalWidth * scale))
+  const height = exactSize?.height || Math.max(1, Math.round(image.naturalHeight * scale))
   const canvas = document.createElement('canvas')
   canvas.width = image.naturalWidth
   canvas.height = image.naturalHeight
   canvas.getContext('2d').drawImage(image, 0, 0)
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
   if (!blob) throw new Error('No se pudo convertir una imagen de la nota')
-  return new docx.ImageRun({ type: 'png', data: await blob.arrayBuffer(), transformation: { width: Math.max(1, Math.round(image.naturalWidth * scale)), height: Math.max(1, Math.round(image.naturalHeight * scale)) } })
+  return new docx.ImageRun({ type: 'png', data: await blob.arrayBuffer(), transformation: { width, height } })
 }
 
 function download(blob, fileName) {
@@ -64,11 +70,15 @@ function download(blob, fileName) {
 export async function downloadNotaWord(nota) {
   const docx = await import('docx')
   const preset = FIRMANTE_PRESETS[nota.empresaEntregadoPor]
+  const signatureMaxSize = nota.empresaEntregadoPor
+    ? { width: 170, height: 80 }
+    : { width: 150, height: 70 }
+  const stampSize = nota.empresaEntregadoPor === 'jdblab' ? JDBLAB_STAMP_SIZE : undefined
   const [logo, firmaEntregado, sello, firmaRecibido] = await Promise.all([
     imageRun(logoJdblab, docx, 145, 65),
-    imageRun(nota.entregadoFirma, docx, 130, 60),
-    imageRun(nota.ocultarSello ? '' : nota.entregadoSello || preset?.selloImagen, docx, 85, 60),
-    imageRun(nota.recibidoFirma, docx, 130, 60),
+    imageRun(nota.entregadoFirma, docx, signatureMaxSize.width, signatureMaxSize.height),
+    imageRun(nota.ocultarSello ? '' : nota.entregadoSello || preset?.selloImagen, docx, 150, 80, stampSize),
+    imageRun(nota.recibidoFirma, docx, 150, 70),
   ])
   const header = new docx.Table({ width: { size: 100, type: docx.WidthType.PERCENTAGE }, borders, rows: [
     new docx.TableRow({ children: [cell(docx, [new docx.Paragraph({ children: logo ? [logo] : [], alignment: docx.AlignmentType.CENTER })], { rowSpan: 4, width: 28 }), cell(docx, [paragraph(docx, 'SISTEMA DE GESTIÓN DE CALIDAD', { alignment: docx.AlignmentType.CENTER, run: { bold: true, size: 20 } })], { width: 46 }), cell(docx, 'Código:', { width: 11 }), cell(docx, nota.codigo, { width: 15 })] }),

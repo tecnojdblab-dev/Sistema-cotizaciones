@@ -30,20 +30,41 @@
   text-align: left;
 }
 
-.nota-preview__signature-space {
+.nota-preview__signatures .nota-preview__signature-space {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1.2cqw;
+  height: clamp(40px, 10.5cqw, 84px);
 }
 
-.nota-preview__stamp {
+/* Match certificate image limits relative to the page, not the narrower note columns.
+   Certificates use a min(55%, 340px) signature block with 55%/65%/62% image limits. */
+.nota-preview__signatures .nota-preview__signature-space img {
+  max-width: min(30.25cqw, 187px);
+  max-height: clamp(34px, 9cqw, 72px);
+}
+
+.nota-preview__signatures .nota-preview__signature-space .nota-preview__signature-image--preset {
+  max-width: min(35.75cqw, 221px);
+  max-height: clamp(40px, 10.5cqw, 84px);
+}
+
+.nota-preview__signatures .nota-preview__stamp {
   display: block;
-  margin: 1.2cqw auto 0;
+  margin: 6px auto 4px;
   width: auto;
-  max-width: 22%;
-  max-height: 7cqw;
+  height: auto;
+  max-width: min(34.1cqw, 210.8px);
+  max-height: clamp(34px, 9cqw, 72px);
   object-fit: contain;
+}
+
+.nota-preview__signatures .nota-preview__stamp--jdblab {
+  width: 4.5cm;
+  max-width: none;
+  height: 1.8cm;
+  max-height: none;
 }
 
 /* The PDF canvas should capture only document content, not preview filler space. */
