@@ -15,9 +15,9 @@ function drawFooter(pdf, pageWidth, pageHeight) {
   pdf.setLineWidth(0.5)
   pdf.line(FOOTER_SIDE_MARGIN, lineY, pageWidth - FOOTER_SIDE_MARGIN, lineY)
   pdf.setFont('Helvetica', 'bold')
-  pdf.setFontSize(6.5)
-  pdf.setTextColor(0, 0, 0)
-  pdf.text(DOCUMENT_FOOTER_TEXT, pageWidth / 2, footerY, { align: 'center', maxWidth: pageWidth - FOOTER_SIDE_MARGIN * 2 })
+   pdf.setFontSize(9)
+   pdf.setTextColor(117, 117, 117)
+   pdf.text(DOCUMENT_FOOTER_TEXT, pageWidth / 2, footerY, { align: 'center', maxWidth: pageWidth - FOOTER_SIDE_MARGIN * 2 })
 }
 
 function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels) {
@@ -25,8 +25,13 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
   const scale = canvas.width / previewElement.scrollWidth
   const itemsTable = previewElement.querySelector('.nota-preview__items-table')
   const itemsHeader = itemsTable?.querySelector('thead')
+  const documentHeader = previewElement.querySelector('.nota-preview__header-table')
   const itemsTableTop = itemsTable ? Math.round((itemsTable.getBoundingClientRect().top - previewTop) * scale) : null
   const itemsTableBottom = itemsTable ? Math.round((itemsTable.getBoundingClientRect().bottom - previewTop) * scale) : null
+  const repeatedDocumentHeader = documentHeader ? {
+    top: Math.round((documentHeader.getBoundingClientRect().top - previewTop) * scale),
+    height: Math.round(documentHeader.getBoundingClientRect().height * scale),
+  } : null
   const repeatedHeader = itemsHeader ? {
     top: Math.round((itemsHeader.getBoundingClientRect().top - previewTop) * scale),
     height: Math.round(itemsHeader.getBoundingClientRect().height * scale),
@@ -41,12 +46,21 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
   while (start < canvas.height) {
     const repeatsItemsHeader = Boolean(repeatedHeader && start > itemsTableTop && start < itemsTableBottom)
     const topSpace = start > 0 ? continuationTopSpacePixels : 0
-    const availablePixels = contentPixels - topSpace - (repeatsItemsHeader ? repeatedHeader.height : 0)
+    const repeatsDocumentHeader = Boolean(repeatedDocumentHeader && start > 0)
+    const availablePixels = contentPixels - topSpace
+      - (repeatsDocumentHeader ? repeatedDocumentHeader.height : 0)
+      - (repeatsItemsHeader ? repeatedHeader.height : 0)
     const target = Math.min(start + availablePixels, canvas.height)
     const safeBoundary = boundaries.filter((position) => position > start && position <= target).pop()
     // Only split at a safe boundary when the remaining canvas needs another page.
     const end = target === canvas.height ? target : (safeBoundary || target)
-    slices.push({ start, end, topSpace, repeatedHeader: repeatsItemsHeader ? { ...repeatedHeader, topSpace } : null })
+    slices.push({
+      start,
+      end,
+      topSpace,
+      repeatedDocumentHeader: repeatsDocumentHeader ? { ...repeatedDocumentHeader, topSpace } : null,
+      repeatedHeader: repeatsItemsHeader ? { ...repeatedHeader, topSpace } : null,
+    })
     start = end
   }
 
@@ -63,9 +77,13 @@ export async function downloadNotaPdf(nota, previewElement) {
   const pageHeight = pdf.internal.pageSize.getHeight()
   previewElement.classList.add('nota-preview--export')
   try {
+    await document.fonts?.ready
+    await Promise.all(Array.from(previewElement.querySelectorAll('img'), (image) => (
+      image.decode ? image.decode().catch(() => undefined) : Promise.resolve()
+    )))
     const canvas = await html2canvas(previewElement, {
       backgroundColor: '#fff',
-      scale: 2,
+      scale: 3,
       useCORS: true,
       logging: false,
       width: previewElement.scrollWidth,
@@ -76,21 +94,26 @@ export async function downloadNotaPdf(nota, previewElement) {
     const continuationTopSpacePixels = Math.round(canvas.width * CONTINUATION_TOP_SPACE_MM / pageWidth)
     const slices = pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels)
     for (let index = 0; index < slices.length; index += 1) {
-      const { start, end, topSpace, repeatedHeader } = slices[index]
+      const { start, end, topSpace, repeatedDocumentHeader, repeatedHeader } = slices[index]
       const slice = document.createElement('canvas')
       slice.width = canvas.width
       slice.height = pagePixels
       const context = slice.getContext('2d')
       context.fillStyle = '#fff'
       context.fillRect(0, 0, slice.width, slice.height)
-      const contentY = topSpace + (repeatedHeader ? repeatedHeader.height : 0)
+      const contentY = topSpace
+        + (repeatedDocumentHeader ? repeatedDocumentHeader.height : 0)
+        + (repeatedHeader ? repeatedHeader.height : 0)
+      if (repeatedDocumentHeader) {
+        context.drawImage(canvas, 0, repeatedDocumentHeader.top, canvas.width, repeatedDocumentHeader.height, 0, repeatedDocumentHeader.topSpace, canvas.width, repeatedDocumentHeader.height)
+      }
       if (repeatedHeader) {
-        context.drawImage(canvas, 0, repeatedHeader.top, canvas.width, repeatedHeader.height, 0, repeatedHeader.topSpace, canvas.width, repeatedHeader.height)
+        context.drawImage(canvas, 0, repeatedHeader.top, canvas.width, repeatedHeader.height, 0, topSpace + (repeatedDocumentHeader ? repeatedDocumentHeader.height : 0), canvas.width, repeatedHeader.height)
       }
       const height = end - start
       context.drawImage(canvas, 0, start, canvas.width, height, 0, contentY, canvas.width, height)
       if (index) pdf.addPage(format, 'portrait')
-      pdf.addImage(slice.toDataURL('image/jpeg', 0.96), 'JPEG', 0, 0, pageWidth, pageHeight)
+      pdf.addImage(slice.toDataURL('image/png'), 'PNG', 0, 0, pageWidth, pageHeight)
       drawFooter(pdf, pageWidth, pageHeight)
     }
     pdf.save(`${safeNotaFileName(nota.numero ? `nota-${nota.numero}` : 'nota-entrega')}.pdf`)

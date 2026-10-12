@@ -103,7 +103,7 @@ export async function downloadCertificadoWord(certificado, logoSource) {
     new docx.TableRow({ children: [cell(docx, 'CERTIFICADO DE GARANTÍA'), cell(docx, 'Página'), cell(docx, '1 de 1')] }),
   ] })
   const info = new docx.Table({ width: { size: 100, type: docx.WidthType.PERCENTAGE }, borders, rows: [
-    new docx.TableRow({ children: [cell(docx, 'CLIENTE O ENTIDAD CONTRATANTE:', { blue: true, width: 39 }), cell(docx, certificado.clienteEntidad, { width: 61 })] }),
+    new docx.TableRow({ children: [cell(docx, 'CLIENTE O ENTIDAD CONTRATANTE:', { blue: true, width: 39, run: { bold: true } }), cell(docx, certificado.clienteEntidad, { width: 61 })] }),
     new docx.TableRow({ children: [cell(docx, 'OBJETO DE LA CONTRATACIÓN:', { blue: true, width: 39 }), cell(docx, certificado.objetoContratacion, { width: 61 })] }),
     new docx.TableRow({ children: [cell(docx, [paragraph(docx, `TIEMPO DE GARANTÍA ${certificado.garantiaAnos} AÑO${certificado.garantiaAnos === 1 ? '' : 'S'}`, { alignment: docx.AlignmentType.CENTER, run: { bold: true } })], { blue: true, columnSpan: 2 })] }),
     new docx.TableRow({ children: [cell(docx, `DESDE: ${formatCertificateDate(certificado.fechaDesde)}`), cell(docx, `HASTA: ${formatCertificateDate(certificado.fechaHasta)}`)] }),
@@ -133,14 +133,14 @@ export async function downloadCertificadoWord(certificado, logoSource) {
   if (signature) children.push(new docx.Paragraph({ children: [signature], alignment: docx.AlignmentType.CENTER, spacing: { before: 180 } }))
   const signerLines = [
     { value: certificado.firmanteNombre?.toUpperCase(), bold: true },
-    { value: certificado.firmanteCargo },
-    { value: certificado.firmanteDocumento },
+    { value: certificado.firmanteCargo, bold: false, italics: false },
+    { value: certificado.firmanteDocumento, bold: false, italics: false },
     { value: certificado.firmanteTelefono },
   ].filter((item) => item.value)
   signerLines.forEach((item) => {
     children.push(paragraph(docx, item.value, {
       alignment: docx.AlignmentType.CENTER,
-      run: { bold: item.bold },
+      run: { bold: item.bold, italics: item.italics },
     }))
   })
   if (stamp) children.push(new docx.Paragraph({ children: [stamp], alignment: docx.AlignmentType.CENTER, spacing: { before: 80 } }))

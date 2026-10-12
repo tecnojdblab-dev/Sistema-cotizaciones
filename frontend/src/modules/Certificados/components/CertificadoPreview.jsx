@@ -26,7 +26,7 @@ const CertificadoPreview = forwardRef(function CertificadoPreview({ certificado 
           <col />
         </colgroup>
         <tbody>
-          <tr><td className="certificado-preview__label">CLIENTE O ENTIDAD CONTRATANTE:</td><td>{certificado.clienteEntidad || 'CLIENTE O ENTIDAD'}</td></tr>
+          <tr><td className="certificado-preview__label"><strong>CLIENTE O ENTIDAD CONTRATANTE:</strong></td><td>{certificado.clienteEntidad || 'CLIENTE O ENTIDAD'}</td></tr>
           <tr><th className="certificado-preview__label">OBJETO DE LA CONTRATACIÓN:</th><td>{certificado.objetoContratacion || 'OBJETO DE LA CONTRATACIÓN'}</td></tr>
           <tr><th colSpan="2" className="certificado-preview__blue-title">TIEMPO DE GARANTÍA {certificado.garantiaAnos} AÑO{Number(certificado.garantiaAnos) === 1 ? '' : 'S'}</th></tr>
         </tbody>
@@ -74,8 +74,8 @@ const CertificadoPreview = forwardRef(function CertificadoPreview({ certificado 
           />
         )}
         {certificado.firmanteNombre && <strong>{certificado.firmanteNombre}</strong>}
-        {certificado.firmanteCargo && <em>{certificado.firmanteCargo}</em>}
-        {certificado.firmanteDocumento && <span>{certificado.firmanteDocumento}</span>}
+        {certificado.firmanteCargo && <span className="certificado-preview__signer-detail">{certificado.firmanteCargo}</span>}
+        {certificado.firmanteDocumento && <span className="certificado-preview__signer-detail">{certificado.firmanteDocumento}</span>}
         {certificado.firmanteTelefono && <span>{certificado.firmanteTelefono}</span>}
         {certificado.selloImagen && (
           <img

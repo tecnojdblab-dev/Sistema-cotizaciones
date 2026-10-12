@@ -23,19 +23,17 @@ const NotaPreview = forwardRef(function NotaPreview({ nota }, ref) {
       <table className="nota-preview__header-table">
         <tbody>
           <tr>
-            <td rowSpan="4" className="nota-preview__logo"><img src={logoJdblab} alt="JDBlab TECNOequip" /></td>
+            <td rowSpan="3" className="nota-preview__logo"><img src={logoJdblab} alt="JDBlab TECNOequip" /></td>
             <th>SISTEMA DE GESTIÓN DE CALIDAD</th><th>Código:</th><td>{nota.codigo}</td>
           </tr>
           <tr><th>REGISTRO</th><th>Revisión:</th><td>{nota.revision}</td></tr>
-          <tr><th rowSpan="2">NOTA DE ENTREGA Y VERIFICACIÓN DE COMPONENTES</th><th>Página:</th><td>1 de 1</td></tr>
-          <tr><th>N.º de nota:</th><td>{nota.numero || '[Número]'}</td></tr>
+           <tr><th>NOTA DE ENTREGA</th><th>Página:</th><td>1 de 1</td></tr>
         </tbody>
       </table>
 
       <table className="nota-preview__info-table">
         <tbody>
           <tr><th>CLIENTE O ENTIDAD CONTRATANTE:</th><td>{nota.clienteEntidad || '[Nombre del cliente]'}</td></tr>
-          <tr><th>INSTITUCIÓN:</th><td>{nota.institucion || '[Nombre de la institución]'}</td></tr>
           <tr><th>OBJETO DE LA CONTRATACIÓN:</th><td>{nota.objetoContratacion || '[Descripción de la contratación]'}</td></tr>
           <tr><th>LUGAR DE ENTREGA:</th><td>{nota.lugarEntrega || '[Dirección]'}</td></tr>
           <tr><th>FECHA DE ENTREGA:</th><td>{formatNotaDate(nota.fechaEntrega)}</td></tr>
@@ -65,23 +63,24 @@ const NotaPreview = forwardRef(function NotaPreview({ nota }, ref) {
 
       <section className="nota-preview__signatures">
         <div>
-          <strong>ENTREGADO POR</strong>
           <div className="nota-preview__signature-space">
             {nota.entregadoFirma && <img className={nota.empresaEntregadoPor ? 'nota-preview__signature-image--preset' : undefined} src={nota.entregadoFirma} alt="Firma de quien entrega" />}
           </div>
+          <strong>ENTREGADO POR</strong>
           <span className="nota-preview__signer-name">{nota.entregadoNombre || '[Persona seleccionada]'}</span>
-          <span className="nota-preview__signer-role">{nota.entregadoCargo || '[Cargo]'}</span>
-          {nota.entregadoDocumento && <span className="nota-preview__signer-role">{nota.entregadoDocumento}</span>}
+          <span className="nota-preview__signer-role nota-preview__signer-role--certificate-size nota-preview__signer-role--regular">{nota.entregadoCargo || '[Cargo]'}</span>
+          {nota.entregadoDocumento && <span className="nota-preview__signer-role nota-preview__signer-role--certificate-size nota-preview__signer-role--regular">{nota.entregadoDocumento}</span>}
           {nota.entregadoTelefono && <span className="nota-preview__signer-role">{nota.entregadoTelefono}</span>}
           {selloEntregado && <img className={`nota-preview__stamp${nota.empresaEntregadoPor === 'jdblab' ? ' nota-preview__stamp--jdblab' : ''}`} src={selloEntregado} alt="Sello de la empresa" />}
         </div>
         <div>
-          <strong>RECIBIDO POR</strong>
-          <div className="nota-preview__signature-space">
-            {nota.recibidoFirma && <img src={nota.recibidoFirma} alt="Firma de quien recibe" />}
+          <div className="nota-preview__signature-space" aria-hidden="true">
+            {/* Espacio reservado para alinear los datos de recepción con los del firmante. */}
           </div>
+          <strong>RECIBIDO POR</strong>
+          {/* Firma de quien recibe desactivada por solicitud. */}
           <span className="nota-preview__signer-name">{nota.recibidoNombre || '[Persona que recibe]'}</span>
-          <span className="nota-preview__signer-role">{nota.recibidoCargo || '[Cargo]'}</span>
+          <span className="nota-preview__signer-role">Comisión de Recepción</span>
         </div>
       </section>
 

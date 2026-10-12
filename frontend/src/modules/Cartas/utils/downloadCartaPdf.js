@@ -81,8 +81,8 @@ function drawPageFooter(pdf, pageWidth, pageHeight) {
 
   // Footer text
   pdf.setFont('Helvetica', 'bold')
-  pdf.setFontSize(6.5)
-  pdf.setTextColor(0, 0, 0)
+  pdf.setFontSize(9)
+  pdf.setTextColor(117, 117, 117)
   const centerX = pageWidth / 2
   pdf.text(DOCUMENT_FOOTER_TEXT, centerX, footerY, { align: 'center', maxWidth: pageWidth - SIDE_MARGIN * 2 })
 }

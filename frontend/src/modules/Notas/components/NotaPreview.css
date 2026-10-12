@@ -30,6 +30,10 @@
   text-align: left;
 }
 
+.nota-preview__signatures {
+  margin-top: 1cqw !important;
+}
+
 .nota-preview__signatures .nota-preview__signature-space {
   display: flex;
   align-items: center;
@@ -67,6 +71,19 @@
   max-height: none;
 }
 
+.nota-preview__signer-role {
+  font-style: normal;
+}
+
+.nota-preview__signer-role--certificate-size {
+  font-size: 1.05em;
+}
+
+.nota-preview__signer-role--regular {
+  font-style: normal;
+  font-weight: 400;
+}
+
 /* The PDF canvas should capture only document content, not preview filler space. */
 .nota-preview.nota-preview--export {
   aspect-ratio: auto;
@@ -82,7 +99,7 @@
 }
 
 .nota-preview--export .nota-preview__signatures {
-  margin-top: 3cqw;
+  margin-top: 1cqw !important;
 }
 
 .nota-preview--export > .document-footer {

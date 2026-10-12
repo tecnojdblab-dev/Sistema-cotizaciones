@@ -16,8 +16,8 @@ function drawFooter(pdf, pageWidth, pageHeight) {
   pdf.setLineWidth(0.5)
   pdf.line(FOOTER_SIDE_MARGIN, lineY, pageWidth - FOOTER_SIDE_MARGIN, lineY)
   pdf.setFont('Helvetica', 'bold')
-  pdf.setFontSize(6.5)
-  pdf.setTextColor(0, 0, 0)
+  pdf.setFontSize(9)
+  pdf.setTextColor(117, 117, 117)
   pdf.text(DOCUMENT_FOOTER_TEXT, pageWidth / 2, footerY, { align: 'center', maxWidth: pageWidth - FOOTER_SIDE_MARGIN * 2 })
 }
 
@@ -64,8 +64,12 @@ export async function downloadCertificadoPdf(certificado, previewElement) {
   const height = pdf.internal.pageSize.getHeight()
   previewElement.classList.add('certificado-preview--export')
   try {
+    await document.fonts?.ready
+    await Promise.all(Array.from(previewElement.querySelectorAll('img'), (image) => (
+      image.decode ? image.decode().catch(() => undefined) : Promise.resolve()
+    )))
     const canvas = await html2canvas(previewElement, {
-      backgroundColor: '#fff', logging: false, scale: 2, useCORS: true,
+      backgroundColor: '#fff', logging: false, scale: 3, useCORS: true,
       width: previewElement.scrollWidth, height: previewElement.scrollHeight,
     })
     const pagePixels = Math.round(canvas.width * height / width)
@@ -87,7 +91,7 @@ export async function downloadCertificadoPdf(certificado, previewElement) {
       const contentHeight = end - start
       context.drawImage(canvas, 0, start, canvas.width, contentHeight, 0, contentY, canvas.width, contentHeight)
       if (index) pdf.addPage(format, 'portrait')
-      pdf.addImage(pageCanvas.toDataURL('image/jpeg', .95), 'JPEG', 0, 0, width, height)
+      pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, width, height)
       drawFooter(pdf, width, height)
     }
     pdf.save(`${safeCertificateFileName(certificado.codigo)}.pdf`)

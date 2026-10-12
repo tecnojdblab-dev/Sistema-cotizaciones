@@ -44,7 +44,7 @@ export default function NotaForm({ nota, onCancel, onChange, onSave }) {
     if (!cliente) return
     form.setFieldsValue({
       clienteId: String(cliente.idCliente),
-      clienteEntidad: cliente.nombreCompleto || cliente.institucion || '',
+      clienteEntidad: cliente.institucion || cliente.nombreCompleto || '',
       institucion: cliente.institucion || '',
       lugarEntrega: cliente.direccion || '',
     })

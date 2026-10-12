@@ -76,9 +76,13 @@
 }
 
 .certificado-preview__signature strong,
-.certificado-preview__signature em,
 .certificado-preview__signature span {
   display: block;
+}
+
+.certificado-preview__signer-detail {
+  font-style: normal;
+  font-weight: 400;
 }
 
 .certificado-preview--export > .document-footer {

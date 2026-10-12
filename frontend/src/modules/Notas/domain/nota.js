@@ -28,7 +28,7 @@ export function createEmptyNota() {
     entregadoSello: '',
     ocultarSello: false,
     recibidoNombre: '',
-    recibidoCargo: '',
+    recibidoCargo: 'Comisión de Recepción',
     recibidoFirma: '',
     estado: NOTA_STATUS.DRAFT,
   }

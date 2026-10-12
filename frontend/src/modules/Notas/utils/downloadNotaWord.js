@@ -74,21 +74,18 @@ export async function downloadNotaWord(nota) {
     ? { width: 170, height: 80 }
     : { width: 150, height: 70 }
   const stampSize = nota.empresaEntregadoPor === 'jdblab' ? JDBLAB_STAMP_SIZE : undefined
-  const [logo, firmaEntregado, sello, firmaRecibido] = await Promise.all([
+  const [logo, firmaEntregado, sello] = await Promise.all([
     imageRun(logoJdblab, docx, 145, 65),
     imageRun(nota.entregadoFirma, docx, signatureMaxSize.width, signatureMaxSize.height),
     imageRun(nota.ocultarSello ? '' : nota.entregadoSello || preset?.selloImagen, docx, 150, 80, stampSize),
-    imageRun(nota.recibidoFirma, docx, 150, 70),
   ])
   const header = new docx.Table({ width: { size: 100, type: docx.WidthType.PERCENTAGE }, borders, rows: [
-    new docx.TableRow({ children: [cell(docx, [new docx.Paragraph({ children: logo ? [logo] : [], alignment: docx.AlignmentType.CENTER })], { rowSpan: 4, width: 28 }), cell(docx, [paragraph(docx, 'SISTEMA DE GESTIÓN DE CALIDAD', { alignment: docx.AlignmentType.CENTER, run: { bold: true, size: 20 } })], { width: 46 }), cell(docx, 'Código:', { width: 11 }), cell(docx, nota.codigo, { width: 15 })] }),
-    new docx.TableRow({ children: [cell(docx, 'REGISTRO', { run: { bold: true }, alignment: docx.AlignmentType.CENTER }), cell(docx, 'Revisión:'), cell(docx, nota.revision)] }),
-    new docx.TableRow({ children: [cell(docx, 'NOTA DE ENTREGA Y VERIFICACIÓN DE COMPONENTES', { run: { bold: true }, alignment: docx.AlignmentType.CENTER }), cell(docx, 'Página:'), cell(docx, '1') ] }),
-    new docx.TableRow({ children: [cell(docx, 'N.º de nota:'), cell(docx, nota.numero, { columnSpan: 2 })] }),
+     new docx.TableRow({ tableHeader: true, children: [cell(docx, [new docx.Paragraph({ children: logo ? [logo] : [], alignment: docx.AlignmentType.CENTER })], { rowSpan: 3, width: 28 }), cell(docx, [paragraph(docx, 'SISTEMA DE GESTIÓN DE CALIDAD', { alignment: docx.AlignmentType.CENTER, run: { bold: true, size: 20 } })], { width: 46 }), cell(docx, 'Código:', { width: 11 }), cell(docx, nota.codigo, { width: 15 })] }),
+     new docx.TableRow({ tableHeader: true, children: [cell(docx, 'REGISTRO', { run: { bold: true }, alignment: docx.AlignmentType.CENTER }), cell(docx, 'Revisión:'), cell(docx, nota.revision)] }),
+     new docx.TableRow({ tableHeader: true, children: [cell(docx, 'NOTA DE ENTREGA', { run: { bold: true }, alignment: docx.AlignmentType.CENTER }), cell(docx, 'Página:'), cell(docx, '1') ] }),
   ] })
   const info = new docx.Table({ width: { size: 100, type: docx.WidthType.PERCENTAGE }, borders, rows: [
     ['CLIENTE O ENTIDAD CONTRATANTE:', nota.clienteEntidad],
-    ['INSTITUCIÓN:', nota.institucion],
     ['OBJETO DE LA CONTRATACIÓN:', nota.objetoContratacion],
     ['LUGAR DE ENTREGA:', nota.lugarEntrega],
     ['FECHA DE ENTREGA:', formatNotaDate(nota.fechaEntrega)],
@@ -109,8 +106,8 @@ export async function downloadNotaWord(nota) {
   ] })
   const signatures = new docx.Table({ width: { size: 100, type: docx.WidthType.PERCENTAGE }, borders: noBorders, rows: [
     new docx.TableRow({ children: [
-      cell(docx, [paragraph(docx, 'ENTREGADO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), new docx.Paragraph({ children: firmaEntregado ? [firmaEntregado] : [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160 } }), paragraph(docx, nota.entregadoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.entregadoCargo || '', { alignment: docx.AlignmentType.CENTER }), paragraph(docx, nota.entregadoDocumento || '', { alignment: docx.AlignmentType.CENTER }), paragraph(docx, nota.entregadoTelefono || '', { alignment: docx.AlignmentType.CENTER }), ...(sello ? [new docx.Paragraph({ children: [sello], alignment: docx.AlignmentType.CENTER, spacing: { before: 100 } })] : [])], { width: 50, borderless: true }),
-      cell(docx, [paragraph(docx, 'RECIBIDO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), new docx.Paragraph({ children: firmaRecibido ? [firmaRecibido] : [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160 } }), paragraph(docx, nota.recibidoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.recibidoCargo || '', { alignment: docx.AlignmentType.CENTER })], { width: 50, borderless: true }),
+       cell(docx, [new docx.Paragraph({ children: firmaEntregado ? [firmaEntregado] : [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160 } }), paragraph(docx, 'ENTREGADO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.entregadoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.entregadoCargo || '', { alignment: docx.AlignmentType.CENTER, run: { bold: false, italics: false, size: 20 } }), paragraph(docx, nota.entregadoDocumento || '', { alignment: docx.AlignmentType.CENTER, run: { bold: false, italics: false, size: 20 } }), paragraph(docx, nota.entregadoTelefono || '', { alignment: docx.AlignmentType.CENTER }), ...(sello ? [new docx.Paragraph({ children: [sello], alignment: docx.AlignmentType.CENTER, spacing: { before: 100 } })] : [])], { width: 50, borderless: true }),
+       cell(docx, [new docx.Paragraph({ children: [], alignment: docx.AlignmentType.CENTER, spacing: { before: 160, after: 800 } }), /* Firma de quien recibe desactivada por solicitud. */ paragraph(docx, 'RECIBIDO POR', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, nota.recibidoNombre || '', { alignment: docx.AlignmentType.CENTER, run: { bold: true } }), paragraph(docx, 'Comisión de Recepción', { alignment: docx.AlignmentType.CENTER, run: { italics: false } })], { width: 50, borderless: true }),
     ] }),
   ] })
   const document = new docx.Document({
@@ -119,7 +116,7 @@ export async function downloadNotaWord(nota) {
     sections: [{
       properties: { page: { size: { width: docx.convertMillimetersToTwip(nota.papel === 'a4' ? 210 : 215.9), height: docx.convertMillimetersToTwip(nota.papel === 'a4' ? 297 : 279.4) }, margin: { top: 720, right: 720, bottom: 1050, left: 720, footer: 454 } } },
       footers: { default: createDocumentWordFooter(docx) },
-      children: [header, paragraph(docx, '', { spacing: { after: 120 } }), info, paragraph(docx, '1.  DESCRIPCIÓN DE LA ENTREGA.', { spacing: { before: 220, after: 100 }, run: { bold: true } }), paragraph(docx, nota.introduccion, { alignment: docx.AlignmentType.JUSTIFIED, spacing: { after: 130 } }), items, paragraph(docx, '', { spacing: { after: 160 } }), signatures],
+      children: [header, paragraph(docx, '', { spacing: { after: 120 } }), info, paragraph(docx, '1.  DESCRIPCIÓN DE LA ENTREGA.', { spacing: { before: 220, after: 100 }, run: { bold: true } }), paragraph(docx, nota.introduccion, { alignment: docx.AlignmentType.JUSTIFIED, spacing: { after: 130 } }), items, paragraph(docx, '', { spacing: { after: 40 } }), signatures],
     }],
   })
   download(await docx.Packer.toBlob(document), `${safeNotaFileName(nota.numero ? `nota-${nota.numero}` : 'nota-entrega')}.docx`)
