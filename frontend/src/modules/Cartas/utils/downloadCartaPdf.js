@@ -88,6 +88,28 @@ function drawPageFooter(pdf, pageWidth, pageHeight) {
   pdf.text(DOCUMENT_FOOTER_TEXT, centerX, footerY, { align: 'center', maxWidth: pageWidth - 25.4 })
 }
 
+function triggerPdfDownload(pdf, filename) {
+  try {
+    pdf.save(filename)
+    return
+  } catch {
+    // no-op: fallback below for browsers that block direct save calls
+  }
+
+  const blob = pdf.output('blob')
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.rel = 'noopener'
+  document.body.appendChild(link)
+  link.click()
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+    link.remove()
+  }, 1500)
+}
+
 function getProtectedRanges(previewElement, scale) {
   const previewTop = previewElement.getBoundingClientRect().top
   const ranges = []
@@ -193,7 +215,7 @@ export async function downloadCartaPdf(carta, previewElement) {
       drawPageFooter(pdf, pageWidth, pageHeight)
     }
 
-    pdf.save(`${safeFileName(carta.numero || carta.referencia)}.pdf`)
+    triggerPdfDownload(pdf, `${safeFileName(carta.numero || carta.referencia)}.pdf`)
   } finally {
     previewElement.classList.remove('carta-preview--export')
   }

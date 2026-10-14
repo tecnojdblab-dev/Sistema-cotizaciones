@@ -78,6 +78,28 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
   return { slices, documentHeaderBounds: repeatedDocumentHeader }
 }
 
+function triggerPdfDownload(pdf, filename) {
+  try {
+    pdf.save(filename)
+    return
+  } catch {
+    // no-op: fallback below for browsers that block direct save calls
+  }
+
+  const blob = pdf.output('blob')
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.rel = 'noopener'
+  document.body.appendChild(link)
+  link.click()
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+    link.remove()
+  }, 1500)
+}
+
 function drawPageNumber(context, headerBounds, page, total, topOffset = 0) {
   const pageCell = headerBounds?.pageCell
   if (!pageCell) return
@@ -152,7 +174,7 @@ export async function downloadNotaPdf(nota, previewElement) {
       pdf.addImage(slice.toDataURL('image/png'), 'PNG', 0, 0, pageWidth, pageHeight)
       drawFooter(pdf, pageWidth, pageHeight)
     }
-    pdf.save(`${safeNotaFileName(nota.numero ? `nota-${nota.numero}` : 'nota-entrega')}.pdf`)
+    triggerPdfDownload(pdf, `${safeNotaFileName(nota.numero ? `nota-${nota.numero}` : 'nota-entrega')}.pdf`)
   } finally {
     previewElement.classList.remove('nota-preview--export')
   }

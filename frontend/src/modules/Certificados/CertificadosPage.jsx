@@ -61,14 +61,24 @@ export default function CertificadosPage() {
     navigate('/certificados', { replace: true, state: null })
   }, [location.state, navigate])
 
-  useEffect(() => {
-    if (!pdfQueue || !exportRef.current) return
-    let active = true
-    downloadCertificadoPdf(pdfQueue, exportRef.current)
-      .catch((error) => message.error(error.message || 'No se pudo generar el PDF'))
-      .finally(() => { if (active) setPdfQueue(null) })
-    return () => { active = false }
-  }, [pdfQueue])
+  const handlePdfDownload = useCallback(async (certificado) => {
+    if (!certificado) return
+    setPdfQueue(certificado)
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    if (!exportRef.current) {
+      setPdfQueue(null)
+      message.error('No se pudo preparar la vista previa para exportar el PDF')
+      return
+    }
+
+    try {
+      await downloadCertificadoPdf(certificado, exportRef.current)
+    } catch (error) {
+      message.error(error.message || 'No se pudo generar el PDF')
+    } finally {
+      setPdfQueue(null)
+    }
+  }, [])
 
   const reset = useCallback(() => {
     const empty = createEmptyCertificado()
@@ -108,12 +118,12 @@ export default function CertificadosPage() {
         <CertificadoForm certificado={formValue} onCancel={reset} onChange={handleChange} onSave={save} />
       </Card>
       <aside className="certificados-preview-column">
-        <div className="certificados-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Certificado de garantía</Text></div><Space wrap><Button icon={<FileWordOutlined />} disabled={!draft.clienteEntidad} onClick={() => word(draft)}>Word</Button><Button icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => setPdfQueue(draft)}>PDF</Button></Space></div>
+        <div className="certificados-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Certificado de garantía</Text></div><Space wrap><Button icon={<FileWordOutlined />} disabled={!draft.clienteEntidad} onClick={() => word(draft)}>Word</Button><Button icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => handlePdfDownload(draft)}>PDF</Button></Space></div>
         <div className="certificados-preview-scroll"><CertificadoPreview certificado={draft} /></div>
       </aside>
-    </div> : <Card title="Historial de certificados" loading={loading} variant="borderless"><CertificadosHistory certificados={certificados} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={setPdfQueue} onView={setViewing} onWord={word} /></Card>}
+    </div> : <Card title="Historial de certificados" loading={loading} variant="borderless"><CertificadosHistory certificados={certificados} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={handlePdfDownload} onView={setViewing} onWord={word} /></Card>}
 
-    <Modal title="Vista previa del certificado" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={960} footer={viewing ? <Button type="primary" icon={<FilePdfOutlined />} onClick={() => setPdfQueue(viewing)}>Descargar PDF</Button> : null}>
+    <Modal title="Vista previa del certificado" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={960} footer={viewing ? <Button type="primary" icon={<FilePdfOutlined />} onClick={() => handlePdfDownload(viewing)}>Descargar PDF</Button> : null}>
       {viewing && <div className="certificado-modal-preview"><CertificadoPreview certificado={viewing} /></div>}
     </Modal>
     {pdfQueue && <div className="certificado-pdf-sandbox" aria-hidden="true"><CertificadoPreview ref={exportRef} certificado={pdfQueue} /></div>}

@@ -70,6 +70,28 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
   return { slices, certificateHeaderBounds }
 }
 
+function triggerPdfDownload(pdf, filename) {
+  try {
+    pdf.save(filename)
+    return
+  } catch {
+    // no-op: fallback below for browsers that block direct save calls
+  }
+
+  const blob = pdf.output('blob')
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.rel = 'noopener'
+  document.body.appendChild(link)
+  link.click()
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+    link.remove()
+  }, 1500)
+}
+
 function drawPageNumber(context, bounds, page, total, topOffset = 0) {
   if (!bounds) return
   const { pageCell } = bounds
@@ -133,7 +155,7 @@ export async function downloadCertificadoPdf(certificado, previewElement) {
       pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, width, height)
       drawFooter(pdf, width, height)
     }
-    pdf.save(`${safeCertificateFileName(certificado.codigo)}.pdf`)
+    triggerPdfDownload(pdf, `${safeCertificateFileName(certificado.codigo)}.pdf`)
   } finally {
     previewElement.classList.remove('certificado-preview--export')
   }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Alert, Button, Card, message, Modal, Segmented, Space, Spin, Typography } from 'antd'
 import {
   DownloadOutlined,
@@ -33,23 +33,25 @@ export default function CartasPage() {
     setDraft(normalizeCarta(values))
   }, [])
 
-  useEffect(() => {
-    if (!pdfQueue || !pdfPreviewRef.current) return
-    let active = true
+  const handlePdfDownload = useCallback(async (carta) => {
+    if (!carta) return
+    setPdfQueue(carta)
+    await new Promise((resolve) => requestAnimationFrame(resolve))
 
-    const exportPdf = async () => {
-      try {
-        await downloadCartaPdf(pdfQueue, pdfPreviewRef.current)
-      } catch (exportError) {
-        message.error(exportError.message || 'No se pudo generar el PDF')
-      } finally {
-        if (active) setPdfQueue(null)
-      }
+    if (!pdfPreviewRef.current) {
+      setPdfQueue(null)
+      message.error('No se pudo preparar la vista previa para exportar el PDF')
+      return
     }
 
-    exportPdf()
-    return () => { active = false }
-  }, [pdfQueue])
+    try {
+      await downloadCartaPdf(carta, pdfPreviewRef.current)
+    } catch (exportError) {
+      message.error(exportError.message || 'No se pudo generar el PDF')
+    } finally {
+      setPdfQueue(null)
+    }
+  }, [])
 
   const resetEditor = useCallback(() => {
     const empty = createEmptyCarta()
@@ -170,7 +172,7 @@ export default function CartasPage() {
                 >
                   Word
                 </Button>
-                <Button icon={<FilePdfOutlined />} disabled={!draft.destinatario} onClick={() => setPdfQueue(draft)}>
+                <Button icon={<FilePdfOutlined />} disabled={!draft.destinatario} onClick={() => handlePdfDownload(draft)}>
                   PDF
                 </Button>
               </Space>
@@ -192,7 +194,7 @@ export default function CartasPage() {
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}
               onEdit={handleEdit}
-              onPdf={setPdfQueue}
+              onPdf={handlePdfDownload}
               onView={setViewingCarta}
               onWord={handleWord}
             />
@@ -215,7 +217,7 @@ export default function CartasPage() {
           >
             Word
           </Button>,
-          <Button key="pdf" type="primary" icon={<DownloadOutlined />} onClick={() => setPdfQueue(viewingCarta)}>PDF</Button>,
+          <Button key="pdf" type="primary" icon={<DownloadOutlined />} onClick={() => handlePdfDownload(viewingCarta)}>PDF</Button>,
         ] : null}
       >
         {viewingCarta && (

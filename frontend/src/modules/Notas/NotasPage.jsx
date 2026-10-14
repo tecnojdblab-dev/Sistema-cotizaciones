@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Alert, Button, Card, message, Modal, Segmented, Space, Typography } from 'antd'
 import { FilePdfOutlined, FileWordOutlined, HistoryOutlined, PlusOutlined } from '@ant-design/icons'
@@ -25,14 +25,24 @@ export default function NotasPage() {
   const exportRef = useRef(null)
   const handleChange = useCallback((values) => setDraft(normalizeNota(values)), [])
 
-  useEffect(() => {
-    if (!pdfQueue || !exportRef.current) return
-    let active = true
-    downloadNotaPdf(pdfQueue, exportRef.current)
-      .catch((error) => message.error(error.message || 'No se pudo generar el PDF'))
-      .finally(() => { if (active) setPdfQueue(null) })
-    return () => { active = false }
-  }, [pdfQueue])
+  const handlePdfDownload = useCallback(async (nota) => {
+    if (!nota) return
+    setPdfQueue(nota)
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    if (!exportRef.current) {
+      setPdfQueue(null)
+      message.error('No se pudo preparar la vista previa para exportar el PDF')
+      return
+    }
+
+    try {
+      await downloadNotaPdf(nota, exportRef.current)
+    } catch (error) {
+      message.error(error.message || 'No se pudo generar el PDF')
+    } finally {
+      setPdfQueue(null)
+    }
+  }, [])
 
   const reset = useCallback(() => {
     const empty = createEmptyNota()
@@ -77,12 +87,12 @@ export default function NotasPage() {
         <NotaForm nota={formValue} onCancel={reset} onChange={handleChange} onSave={save} />
       </Card>
       <aside className="notas-preview-column">
-        <div className="notas-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Nota de entrega y verificación</Text></div><Space wrap><Button icon={<FileWordOutlined />} disabled={!draft.clienteEntidad} onClick={() => word(draft)}>Word</Button><Button type="primary" icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => setPdfQueue(draft)}>Descargar PDF</Button></Space></div>
+        <div className="notas-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Nota de entrega y verificación</Text></div><Space wrap><Button icon={<FileWordOutlined />} disabled={!draft.clienteEntidad} onClick={() => word(draft)}>Word</Button><Button type="primary" icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => handlePdfDownload(draft)}>Descargar PDF</Button></Space></div>
         <div className="notas-preview-scroll"><NotaPreview nota={draft} /></div>
       </aside>
-    </div> : <Card title="Historial de notas" loading={loading} variant="borderless"><NotasHistory notas={notas} onCreateCertificado={createCertificado} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={setPdfQueue} onView={setViewing} onWord={word} /></Card>}
+    </div> : <Card title="Historial de notas" loading={loading} variant="borderless"><NotasHistory notas={notas} onCreateCertificado={createCertificado} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={handlePdfDownload} onView={setViewing} onWord={word} /></Card>}
 
-    <Modal title="Vista previa de la nota" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={1000} footer={viewing ? <Space><Button icon={<FileWordOutlined />} onClick={() => word(viewing)}>Descargar Word</Button><Button type="primary" icon={<FilePdfOutlined />} onClick={() => setPdfQueue(viewing)}>Descargar PDF</Button></Space> : null}>
+    <Modal title="Vista previa de la nota" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={1000} footer={viewing ? <Space><Button icon={<FileWordOutlined />} onClick={() => word(viewing)}>Descargar Word</Button><Button type="primary" icon={<FilePdfOutlined />} onClick={() => handlePdfDownload(viewing)}>Descargar PDF</Button></Space> : null}>
       {viewing && <div className="nota-modal-preview"><NotaPreview nota={viewing} /></div>}
     </Modal>
     {pdfQueue && <div className="nota-pdf-sandbox" aria-hidden="true"><NotaPreview ref={exportRef} nota={pdfQueue} /></div>}
