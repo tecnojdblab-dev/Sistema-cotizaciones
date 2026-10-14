@@ -101,3 +101,22 @@
   /* 12.7 mm on a 215.9 mm page. */
   padding: 5.882353%;
 }
+
+/* Keep the export DOM at the physical page width; html2canvas must not capture
+   a viewport-sized preview or container-relative typography will be wrong. */
+.certificado-pdf-sandbox {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 210mm;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.certificado-pdf-sandbox > .certificado-preview {
+  width: 100%;
+}
+
+.certificado-pdf-sandbox > .certificado-preview--letter {
+  width: 215.9mm;
+}

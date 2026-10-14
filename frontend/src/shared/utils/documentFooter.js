@@ -1,13 +1,13 @@
-export const DOCUMENT_FOOTER_TEXT = 'TELEFONO: 4-4292937 - CEL: 70769521 - AV. CIRCUNVALACION, ENTRE C. VATICANO Y GUTIERREZ,\nCOCHABAMBA - BOLIVIA'
+export const DOCUMENT_FOOTER_TEXT = 'TELÉFONO: 4-4292937 – CEL: 70769521 – AV. CIRCUNVALACIÓN, ENTRE C. VATICANO Y C.F. PÉREZ SAAVEDRA,\nCOCHABAMBA - BOLIVIA'
 
-export function createDocumentWordFooter(docx) {
+export function createDocumentWordFooter(docx, fontSize = 18) {
   return new docx.Footer({
     children: [new docx.Paragraph({
       children: [new docx.TextRun({
-        font: 'Arial', size: 18, bold: true, color: '757575',
+        font: 'Arial', size: fontSize, bold: true, color: '757575',
         text: DOCUMENT_FOOTER_TEXT.split('\n')[0],
       }), new docx.TextRun({
-        font: 'Arial', size: 18, bold: true, color: '757575',
+        font: 'Arial', size: fontSize, bold: true, color: '757575',
         break: 1, text: DOCUMENT_FOOTER_TEXT.split('\n')[1],
       })],
       alignment: docx.AlignmentType.CENTER,

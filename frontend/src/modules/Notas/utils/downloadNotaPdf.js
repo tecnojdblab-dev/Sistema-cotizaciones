@@ -7,6 +7,7 @@ const FOOTER_LINE_Y_OFFSET = 3
 const FOOTER_SPACE_MM = FOOTER_MARGIN_BOTTOM + FOOTER_LINE_Y_OFFSET + 3
 const FOOTER_SIDE_MARGIN = PAGE_MARGIN_MM
 const CONTINUATION_TOP_SPACE_MM = PAGE_MARGIN_MM
+const REPEATED_HEADER_GAP_MM = 6
 
 function drawFooter(pdf, pageWidth, pageHeight) {
   const footerY = pageHeight - FOOTER_MARGIN_BOTTOM
@@ -20,7 +21,7 @@ function drawFooter(pdf, pageWidth, pageHeight) {
    pdf.text(DOCUMENT_FOOTER_TEXT, pageWidth / 2, footerY, { align: 'center', maxWidth: pageWidth - FOOTER_SIDE_MARGIN * 2 })
 }
 
-function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels) {
+function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels, pageWidthMm) {
   const previewTop = previewElement.getBoundingClientRect().top
   const scale = canvas.width / previewElement.scrollWidth
   const itemsTable = previewElement.querySelector('.nota-preview__items-table')
@@ -28,10 +29,18 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
   const documentHeader = previewElement.querySelector('.nota-preview__header-table')
   const itemsTableTop = itemsTable ? Math.round((itemsTable.getBoundingClientRect().top - previewTop) * scale) : null
   const itemsTableBottom = itemsTable ? Math.round((itemsTable.getBoundingClientRect().bottom - previewTop) * scale) : null
+  const pageCell = documentHeader?.querySelector('tr:last-child td:last-child')
   const repeatedDocumentHeader = documentHeader ? {
     top: Math.round((documentHeader.getBoundingClientRect().top - previewTop) * scale),
     height: Math.round(documentHeader.getBoundingClientRect().height * scale),
+    pageCell: pageCell ? {
+      x: Math.round((pageCell.getBoundingClientRect().left - previewElement.getBoundingClientRect().left) * scale),
+      y: Math.round((pageCell.getBoundingClientRect().top - previewTop) * scale),
+      width: Math.round(pageCell.getBoundingClientRect().width * scale),
+      height: Math.round(pageCell.getBoundingClientRect().height * scale),
+    } : null,
   } : null
+  const repeatedDocumentHeaderGap = Math.round(canvas.width * REPEATED_HEADER_GAP_MM / pageWidthMm)
   const repeatedHeader = itemsHeader ? {
     top: Math.round((itemsHeader.getBoundingClientRect().top - previewTop) * scale),
     height: Math.round(itemsHeader.getBoundingClientRect().height * scale),
@@ -47,9 +56,10 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
     const repeatsItemsHeader = Boolean(repeatedHeader && start > itemsTableTop && start < itemsTableBottom)
     const topSpace = start > 0 ? continuationTopSpacePixels : 0
     const repeatsDocumentHeader = Boolean(repeatedDocumentHeader && start > 0)
-    const availablePixels = contentPixels - topSpace
+    const availablePixels = Math.max(1, contentPixels - topSpace
       - (repeatsDocumentHeader ? repeatedDocumentHeader.height : 0)
-      - (repeatsItemsHeader ? repeatedHeader.height : 0)
+      - (repeatsDocumentHeader ? repeatedDocumentHeaderGap : 0)
+      - (repeatsItemsHeader ? repeatedHeader.height : 0))
     const target = Math.min(start + availablePixels, canvas.height)
     const safeBoundary = boundaries.filter((position) => position > start && position <= target).pop()
     // Only split at a safe boundary when the remaining canvas needs another page.
@@ -58,13 +68,34 @@ function pageBreaks(previewElement, canvas, contentPixels, continuationTopSpaceP
       start,
       end,
       topSpace,
+      repeatedDocumentHeaderGap: repeatsDocumentHeader ? repeatedDocumentHeaderGap : 0,
       repeatedDocumentHeader: repeatsDocumentHeader ? { ...repeatedDocumentHeader, topSpace } : null,
       repeatedHeader: repeatsItemsHeader ? { ...repeatedHeader, topSpace } : null,
     })
     start = end
   }
 
-  return slices
+  return { slices, documentHeaderBounds: repeatedDocumentHeader }
+}
+
+function drawPageNumber(context, headerBounds, page, total, topOffset = 0) {
+  const pageCell = headerBounds?.pageCell
+  if (!pageCell) return
+
+  const { x, y, width, height } = pageCell
+  context.fillStyle = '#fff'
+  context.fillRect(x + 2, y + topOffset + 2, width - 4, height - 4)
+  context.fillStyle = '#222'
+  const label = `${page} de ${total}`
+  let fontSize = Math.max(12, Math.round(height * 0.36))
+  context.font = `${fontSize}px Arial`
+  while (fontSize > 12 && context.measureText(label).width > width - 12) {
+    fontSize -= 1
+    context.font = `${fontSize}px Arial`
+  }
+  context.textAlign = 'center'
+  context.textBaseline = 'middle'
+  context.fillText(label, x + width / 2, y + topOffset + height / 2)
 }
 
 export async function downloadNotaPdf(nota, previewElement) {
@@ -92,9 +123,9 @@ export async function downloadNotaPdf(nota, previewElement) {
     const pagePixels = Math.round(canvas.width * pageHeight / pageWidth)
     const contentPixels = Math.round(canvas.width * (pageHeight - FOOTER_SPACE_MM) / pageWidth)
     const continuationTopSpacePixels = Math.round(canvas.width * CONTINUATION_TOP_SPACE_MM / pageWidth)
-    const slices = pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels)
+    const { slices, documentHeaderBounds } = pageBreaks(previewElement, canvas, contentPixels, continuationTopSpacePixels, pageWidth)
     for (let index = 0; index < slices.length; index += 1) {
-      const { start, end, topSpace, repeatedDocumentHeader, repeatedHeader } = slices[index]
+      const { start, end, topSpace, repeatedDocumentHeader, repeatedDocumentHeaderGap, repeatedHeader } = slices[index]
       const slice = document.createElement('canvas')
       slice.width = canvas.width
       slice.height = pagePixels
@@ -103,15 +134,20 @@ export async function downloadNotaPdf(nota, previewElement) {
       context.fillRect(0, 0, slice.width, slice.height)
       const contentY = topSpace
         + (repeatedDocumentHeader ? repeatedDocumentHeader.height : 0)
+        + repeatedDocumentHeaderGap
         + (repeatedHeader ? repeatedHeader.height : 0)
       if (repeatedDocumentHeader) {
         context.drawImage(canvas, 0, repeatedDocumentHeader.top, canvas.width, repeatedDocumentHeader.height, 0, repeatedDocumentHeader.topSpace, canvas.width, repeatedDocumentHeader.height)
       }
       if (repeatedHeader) {
-        context.drawImage(canvas, 0, repeatedHeader.top, canvas.width, repeatedHeader.height, 0, topSpace + (repeatedDocumentHeader ? repeatedDocumentHeader.height : 0), canvas.width, repeatedHeader.height)
+        context.drawImage(canvas, 0, repeatedHeader.top, canvas.width, repeatedHeader.height, 0, topSpace + (repeatedDocumentHeader ? repeatedDocumentHeader.height : 0) + repeatedDocumentHeaderGap, canvas.width, repeatedHeader.height)
       }
       const height = end - start
       context.drawImage(canvas, 0, start, canvas.width, height, 0, contentY, canvas.width, height)
+      const pageNumberTopOffset = repeatedDocumentHeader
+        ? repeatedDocumentHeader.topSpace - repeatedDocumentHeader.top
+        : 0
+      drawPageNumber(context, documentHeaderBounds, index + 1, slices.length, pageNumberTopOffset)
       if (index) pdf.addPage(format, 'portrait')
       pdf.addImage(slice.toDataURL('image/png'), 'PNG', 0, 0, pageWidth, pageHeight)
       drawFooter(pdf, pageWidth, pageHeight)

@@ -250,6 +250,10 @@
 
 .carta-preview > .document-footer {
   margin-top: auto;
+  width: 119.27%;
+  margin-right: -9.635%;
+  margin-left: -9.635%;
+  font-size: clamp(5.04px, 1.116cqw, 9.36px);
 }
 
 .carta-preview--export {

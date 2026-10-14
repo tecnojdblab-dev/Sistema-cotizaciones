@@ -47,6 +47,7 @@ const HEADER_LOGO_MAX_WIDTH_MM = 43
 const HEADER_LOGO_MAX_HEIGHT_MM = 20
 const FOOTER_MARGIN_BOTTOM = 8
 const FOOTER_LINE_Y_OFFSET = 3
+const FOOTER_SIDE_MARGIN = 12.7
 const SIDE_MARGIN = 25
 const HEADER_CONTENT_GAP = 5
 const FOOTER_CONTENT_GAP = 4
@@ -77,14 +78,14 @@ function drawPageFooter(pdf, pageWidth, pageHeight) {
   // Blue top border line
   pdf.setDrawColor(79, 155, 211)
   pdf.setLineWidth(0.5)
-  pdf.line(SIDE_MARGIN, lineY, pageWidth - SIDE_MARGIN, lineY)
+  pdf.line(FOOTER_SIDE_MARGIN, lineY, pageWidth - FOOTER_SIDE_MARGIN, lineY)
 
   // Footer text
   pdf.setFont('Helvetica', 'bold')
   pdf.setFontSize(9)
   pdf.setTextColor(117, 117, 117)
   const centerX = pageWidth / 2
-  pdf.text(DOCUMENT_FOOTER_TEXT, centerX, footerY, { align: 'center', maxWidth: pageWidth - SIDE_MARGIN * 2 })
+  pdf.text(DOCUMENT_FOOTER_TEXT, centerX, footerY, { align: 'center', maxWidth: pageWidth - 25.4 })
 }
 
 function getProtectedRanges(previewElement, scale) {

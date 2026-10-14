@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Dropdown, Empty, Input, Popconfirm, Table, Tag, Typography } from 'antd'
 import {
   CopyOutlined,
@@ -16,17 +16,21 @@ import { formatHistoryDate } from '../utils/cartaFormatters.js'
 
 const { Text } = Typography
 
-export default function CartasHistory({ cartas, onDelete, onDuplicate, onEdit, onPdf, onView, onWord }) {
+export default function CartasHistory({ cartas, total, loading, query, setQuery, onDelete, onDuplicate, onEdit, onPdf, onView, onWord }) {
   const [search, setSearch] = useState('')
-  const deferredSearch = useDeferredValue(search.trim().toLowerCase())
 
-  const filteredCartas = useMemo(() => {
-    if (!deferredSearch) return cartas
-    return cartas.filter((carta) =>
-      [carta.numero, carta.referencia, carta.destinatario, carta.institucion]
-        .some((value) => String(value || '').toLowerCase().includes(deferredSearch))
-    )
-  }, [cartas, deferredSearch])
+  useEffect(() => {
+    setSearch(query.search)
+  }, [query.search])
+
+  useEffect(() => {
+    const normalizedSearch = search.trim()
+    if (normalizedSearch === query.search) return undefined
+    const timeoutId = setTimeout(() => {
+      setQuery((current) => ({ ...current, page: 1, search: normalizedSearch }))
+    }, 300)
+    return () => clearTimeout(timeoutId)
+  }, [search, query.search, setQuery])
 
   const columns = [
     {
@@ -122,15 +126,24 @@ export default function CartasHistory({ cartas, onDelete, onDuplicate, onEdit, o
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <Text type="secondary">{filteredCartas.length} carta{filteredCartas.length === 1 ? '' : 's'}</Text>
+        <Text type="secondary">{total} carta{total === 1 ? '' : 's'}</Text>
       </div>
 
       <Table
         className="cartas-history__table"
         rowKey="id"
         columns={columns}
-        dataSource={filteredCartas}
-        pagination={{ pageSize: 8, hideOnSinglePage: true, showLessItems: true, showSizeChanger: false }}
+        dataSource={cartas}
+        loading={loading}
+        pagination={{
+          current: query.page,
+          pageSize: query.pageSize,
+          total,
+          hideOnSinglePage: true,
+          showLessItems: true,
+          showSizeChanger: false,
+        }}
+        onChange={(pagination) => setQuery((current) => ({ ...current, page: pagination.current || 1 }))}
         locale={{ emptyText: <Empty description="Todavía no hay cartas guardadas" /> }}
         scroll={{ x: 'max-content' }}
       />

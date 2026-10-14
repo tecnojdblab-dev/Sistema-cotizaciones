@@ -19,7 +19,7 @@ import './cartas.css'
 const { Title, Text } = Typography
 
 export default function CartasPage() {
-  const { cartas, loading, error, saveCarta, deleteCarta } = useCartas()
+  const { cartas, total, loading, error, query, setQuery, saveCarta, deleteCarta } = useCartas()
   const [activeView, setActiveView] = useState('crear')
   const [editingCarta, setEditingCarta] = useState(null)
   const [formCarta, setFormCarta] = useState(createEmptyCarta)
@@ -185,6 +185,10 @@ export default function CartasPage() {
           <Spin spinning={loading}>
             <CartasHistory
               cartas={cartas}
+              total={total}
+              loading={loading}
+              query={query}
+              setQuery={setQuery}
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}
               onEdit={handleEdit}

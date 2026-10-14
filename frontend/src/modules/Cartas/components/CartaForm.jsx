@@ -218,7 +218,7 @@ export default function CartaForm({ carta, onCancel, onChange, onSave }) {
       </Row>
 
       <div className="carta-form__footer">
-        <Text type="secondary">Los borradores y cartas se guardan localmente en este navegador.</Text>
+        <Text type="secondary">Las cartas se guardan de forma segura en el sistema.</Text>
         <Space wrap className="carta-form__actions">
           {carta?.id && (
             <Button icon={<CloseOutlined />} onClick={onCancel}>Cancelar edición</Button>
