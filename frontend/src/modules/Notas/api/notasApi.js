@@ -10,8 +10,7 @@ function toFrontendNota(nota) {
     entregadoNombre: preset?.firmanteNombre || nota.entregadoNombre || '',
     entregadoCargo: preset?.firmanteCargo || nota.entregadoCargo || '',
     entregadoDocumento: preset?.firmanteDocumento || nota.entregadoDocumento || '',
-    // entregadoTelefono: nota.entregadoTelefono || preset?.firmanteTelefono || '',
-    entregadoTelefono: '',
+    entregadoTelefono: nota.entregadoTelefono || preset?.firmanteTelefono || '',
     entregadoFirma: nota.entregadoFirmaUrl || preset?.firmaImagen || '', entregadoSello: nota.entregadoSelloUrl || preset?.selloImagen || '', ocultarSello: Boolean(nota.ocultarSello), recibidoNombre: nota.recibidoNombre || '', recibidoCargo: nota.recibidoCargo || '', recibidoFirma: nota.recibidoFirmaUrl || '', papel: nota.papel || 'letter', estado: nota.estado || 'borrador', createdAt: nota.fechaCreacion, updatedAt: nota.fechaActualizacion,
     items: (nota.items || []).map((item) => ({ catalogoTipo: item.tipoCatalogo, catalogoId: item.idProducto || item.idComponente ? String(item.idProducto || item.idComponente) : undefined, nombre: item.nombre, descripcion: item.descripcion || '', codigo: item.codigo || '', numeroSerie: item.numeroSerie || '', cantidad: item.cantidad, precioUnitario: Number(item.precioUnitario) })),
   }
@@ -38,7 +37,7 @@ async function toApiPayload(nota) {
   }
 }
 
-export async function getNotas({ take = 200, skip = 0, search = '', signal } = {}) { const params = new URLSearchParams({ take: String(take), skip: String(skip) }); if (search.trim()) params.set('search', search.trim()); const response = await apiGet(`${BASE_URL}?${params}`, { signal }); const data = unwrapData(response); return Array.isArray(data) ? data.map(toFrontendNota) : [] }
+export async function getNotas({ take = 8, skip = 0, search = '', signal } = {}) { const params = new URLSearchParams({ take: String(take), skip: String(skip) }); if (search.trim()) params.set('search', search.trim()); const response = await apiGet(`${BASE_URL}?${params}`, { signal }); const data = unwrapData(response); return { items: Array.isArray(data) ? data.map(toFrontendNota) : [], total: Number(response?.meta?.total ?? (Array.isArray(data) ? data.length : 0)) } }
 export async function createNota(nota) { const response = await apiPost(BASE_URL, await toApiPayload(nota)); return toFrontendNota(unwrapData(response)) }
 export async function updateNota(id, nota) { const response = await apiPut(`${BASE_URL}/${id}`, await toApiPayload(nota)); return toFrontendNota(unwrapData(response)) }
 export async function deleteNota(id) { await apiDelete(`${BASE_URL}/${id}`) }

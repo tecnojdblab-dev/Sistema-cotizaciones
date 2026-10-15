@@ -13,7 +13,7 @@ const { Title, Text } = Typography
 const EMPTY_ROTULO = { clienteId: undefined, nombre: '', cargo: '', correo: '', telefono: '', ciudad: '' }
 
 export default function RotulosPage() {
-  const { rotulos, loading, error, saveRotulo, deleteRotulo } = useRotulos()
+  const { rotulos, total, loading, error, query, setQuery, saveRotulo, deleteRotulo } = useRotulos()
   const [activeView, setActiveView] = useState('crear')
   const [editingRotulo, setEditingRotulo] = useState(null)
   const [draft, setDraft] = useState(EMPTY_ROTULO)
@@ -159,6 +159,10 @@ export default function RotulosPage() {
           <Spin spinning={loading}>
             <RotulosHistory
               rotulos={rotulos}
+              total={total}
+              loading={loading}
+              query={query}
+              setQuery={setQuery}
               onDelete={handleDelete}
               onDownload={handleDownload}
               onEdit={handleEdit}

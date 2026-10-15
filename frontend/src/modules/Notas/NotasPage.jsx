@@ -14,7 +14,7 @@ import './notas.css'
 const { Title, Text } = Typography
 
 export default function NotasPage() {
-  const { notas, loading, error, saveNota, deleteNota } = useNotas()
+  const { notas, total, loading, error, query, setQuery, saveNota, deleteNota } = useNotas()
   const navigate = useNavigate()
   const [view, setView] = useState('crear')
   const [editing, setEditing] = useState(null)
@@ -90,7 +90,7 @@ export default function NotasPage() {
         <div className="notas-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Nota de entrega y verificación</Text></div><Space wrap><Button icon={<FileWordOutlined />} disabled={!draft.clienteEntidad} onClick={() => word(draft)}>Word</Button><Button type="primary" icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => handlePdfDownload(draft)}>Descargar PDF</Button></Space></div>
         <div className="notas-preview-scroll"><NotaPreview nota={draft} /></div>
       </aside>
-    </div> : <Card title="Historial de notas" loading={loading} variant="borderless"><NotasHistory notas={notas} onCreateCertificado={createCertificado} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={handlePdfDownload} onView={setViewing} onWord={word} /></Card>}
+    </div> : <Card title="Historial de notas" loading={loading} variant="borderless"><NotasHistory notas={notas} total={total} loading={loading} query={query} setQuery={setQuery} onCreateCertificado={createCertificado} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={handlePdfDownload} onView={setViewing} onWord={word} /></Card>}
 
     <Modal title="Vista previa de la nota" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={1000} footer={viewing ? <Space><Button icon={<FileWordOutlined />} onClick={() => word(viewing)}>Descargar Word</Button><Button type="primary" icon={<FilePdfOutlined />} onClick={() => handlePdfDownload(viewing)}>Descargar PDF</Button></Space> : null}>
       {viewing && <div className="nota-modal-preview"><NotaPreview nota={viewing} /></div>}

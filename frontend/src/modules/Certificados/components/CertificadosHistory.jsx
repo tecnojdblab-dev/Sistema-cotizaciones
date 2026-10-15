@@ -1,15 +1,19 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Dropdown, Empty, Input, Popconfirm, Table, Tag, Typography } from 'antd'
 import { CopyOutlined, DeleteOutlined, EditOutlined, EyeOutlined, FilePdfOutlined, FileWordOutlined, MoreOutlined, SearchOutlined } from '@ant-design/icons'
 import { CERTIFICADO_STATUS } from '../domain/certificado.js'
 
 const { Text } = Typography
 
-export default function CertificadosHistory({ certificados, onDelete, onDuplicate, onEdit, onPdf, onView, onWord }) {
+export default function CertificadosHistory({ certificados, total, loading, query, setQuery, onDelete, onDuplicate, onEdit, onPdf, onView, onWord }) {
   const [search, setSearch] = useState('')
-  const term = useDeferredValue(search.trim().toLowerCase())
-  const data = useMemo(() => term ? certificados.filter((item) =>
-    [item.codigo, item.clienteEntidad, item.objetoContratacion].some((value) => String(value || '').toLowerCase().includes(term))) : certificados, [certificados, term])
+  useEffect(() => setSearch(query.search), [query.search])
+  useEffect(() => {
+    const normalized = search.trim()
+    if (normalized === query.search) return undefined
+    const timer = setTimeout(() => setQuery((current) => ({ ...current, page: 1, search: normalized })), 300)
+    return () => clearTimeout(timer)
+  }, [search, query.search, setQuery])
   const columns = [
     { title: 'Código', dataIndex: 'codigo', key: 'codigo', width: 130 },
     { title: 'Cliente o entidad', dataIndex: 'clienteEntidad', key: 'cliente', render: (value) => <Text strong>{value}</Text> },
@@ -32,8 +36,8 @@ export default function CertificadosHistory({ certificados, onDelete, onDuplicat
   return <>
     <div className="certificados-history__toolbar">
       <Input allowClear prefix={<SearchOutlined />} placeholder="Buscar por código, cliente u objeto" value={search} onChange={(event) => setSearch(event.target.value)} />
-      <Text type="secondary">{data.length} certificado{data.length === 1 ? '' : 's'}</Text>
+      <Text type="secondary">{total} certificado{total === 1 ? '' : 's'}</Text>
     </div>
-    <Table rowKey="id" columns={columns} dataSource={data} pagination={{ pageSize: 8, hideOnSinglePage: true, showSizeChanger: false }} locale={{ emptyText: <Empty description="Todavía no hay certificados" /> }} scroll={{ x: 'max-content' }} />
+    <Table rowKey="id" columns={columns} dataSource={certificados} loading={loading} pagination={{ current: query.page, pageSize: query.pageSize, total, hideOnSinglePage: true, showSizeChanger: false }} onChange={(pagination) => setQuery((current) => ({ ...current, page: pagination.current || 1 }))} locale={{ emptyText: <Empty description="Todavía no hay certificados" /> }} scroll={{ x: 'max-content' }} />
   </>
 }

@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Dropdown, Empty, Input, Popconfirm, Table, Tag, Typography } from 'antd'
 import { CopyOutlined, DeleteOutlined, EditOutlined, EyeOutlined, FilePdfOutlined, FileTextOutlined, FileWordOutlined, MoreOutlined, SearchOutlined } from '@ant-design/icons'
 import { NOTA_STATUS } from '../domain/nota.js'
@@ -6,12 +6,15 @@ import { formatNotaDate } from '../utils/notaFormatters.js'
 
 const { Text } = Typography
 
-export default function NotasHistory({ notas, onCreateCertificado, onDelete, onDuplicate, onEdit, onPdf, onView, onWord }) {
+export default function NotasHistory({ notas, total, loading, query, setQuery, onCreateCertificado, onDelete, onDuplicate, onEdit, onPdf, onView, onWord }) {
   const [search, setSearch] = useState('')
-  const term = useDeferredValue(search.trim().toLowerCase())
-  const data = useMemo(() => term ? notas.filter((nota) =>
-    [nota.numero, nota.codigo, nota.clienteEntidad, nota.institucion, nota.objetoContratacion]
-      .some((value) => String(value || '').toLowerCase().includes(term))) : notas, [notas, term])
+  useEffect(() => setSearch(query.search), [query.search])
+  useEffect(() => {
+    const normalized = search.trim()
+    if (normalized === query.search) return undefined
+    const timer = setTimeout(() => setQuery((current) => ({ ...current, page: 1, search: normalized })), 300)
+    return () => clearTimeout(timer)
+  }, [search, query.search, setQuery])
   const columns = [
     { title: 'N.º de nota', dataIndex: 'numero', key: 'numero', width: 135, render: (value) => <Text strong>{value}</Text> },
     { title: 'Cliente o entidad', dataIndex: 'clienteEntidad', key: 'cliente' },
@@ -36,8 +39,8 @@ export default function NotasHistory({ notas, onCreateCertificado, onDelete, onD
   return <>
     <div className="notas-history__toolbar">
       <Input allowClear prefix={<SearchOutlined />} placeholder="Buscar por número, cliente, institución u objeto" value={search} onChange={(event) => setSearch(event.target.value)} />
-      <Text type="secondary">{data.length} nota{data.length === 1 ? '' : 's'}</Text>
+      <Text type="secondary">{total} nota{total === 1 ? '' : 's'}</Text>
     </div>
-    <Table rowKey="id" columns={columns} dataSource={data} pagination={{ pageSize: 8, hideOnSinglePage: true, showSizeChanger: false }} locale={{ emptyText: <Empty description="Todavía no hay notas guardadas" /> }} scroll={{ x: 'max-content' }} />
+    <Table rowKey="id" columns={columns} dataSource={notas} loading={loading} pagination={{ current: query.page, pageSize: query.pageSize, total, hideOnSinglePage: true, showSizeChanger: false }} onChange={(pagination) => setQuery((current) => ({ ...current, page: pagination.current || 1 }))} locale={{ emptyText: <Empty description="Todavía no hay notas guardadas" /> }} scroll={{ x: 'max-content' }} />
   </>
 }

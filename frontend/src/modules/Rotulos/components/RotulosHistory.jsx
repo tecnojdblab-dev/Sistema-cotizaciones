@@ -1,4 +1,4 @@
-import { useDeferredValue, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Button,
   Dropdown,
@@ -28,15 +28,15 @@ function formatDate(value) {
   }).format(date)
 }
 
-export default function RotulosHistory({ rotulos, onDelete, onDownload, onEdit }) {
+export default function RotulosHistory({ rotulos, total, loading, query, setQuery, onDelete, onDownload, onEdit }) {
   const [search, setSearch] = useState('')
-  const deferredSearch = useDeferredValue(search.trim().toLowerCase())
-  const filteredRotulos = deferredSearch
-    ? rotulos.filter((rotulo) =>
-        [rotulo.nombre, rotulo.cargo, rotulo.correo, rotulo.telefono, rotulo.ciudad]
-          .some((value) => String(value || '').toLowerCase().includes(deferredSearch))
-      )
-    : rotulos
+  useEffect(() => setSearch(query.search), [query.search])
+  useEffect(() => {
+    const normalized = search.trim()
+    if (normalized === query.search) return undefined
+    const timer = setTimeout(() => setQuery((current) => ({ ...current, page: 1, search: normalized })), 300)
+    return () => clearTimeout(timer)
+  }, [search, query.search, setQuery])
 
   const columns = [
     {
@@ -134,15 +134,17 @@ export default function RotulosHistory({ rotulos, onDelete, onDownload, onEdit }
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <Text type="secondary">{filteredRotulos.length} rótulo{filteredRotulos.length === 1 ? '' : 's'}</Text>
+        <Text type="secondary">{total} rótulo{total === 1 ? '' : 's'}</Text>
       </div>
 
       <Table
         className="rotulos-history__table"
         rowKey="id"
         columns={columns}
-        dataSource={filteredRotulos}
-        pagination={{ pageSize: 8, hideOnSinglePage: true, showSizeChanger: false, showLessItems: true }}
+        dataSource={rotulos}
+        loading={loading}
+        pagination={{ current: query.page, pageSize: query.pageSize, total, hideOnSinglePage: true, showSizeChanger: false, showLessItems: true }}
+        onChange={(pagination) => setQuery((current) => ({ ...current, page: pagination.current || 1 }))}
         locale={{ emptyText: <Empty description="Todavía no hay rótulos guardados" /> }}
         scroll={{ x: 'max-content' }}
       />

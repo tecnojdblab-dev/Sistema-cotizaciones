@@ -34,8 +34,7 @@ function toFrontendCertificado(certificado) {
     firmanteNombre: preset?.firmanteNombre || certificado.firmanteNombre || '',
     firmanteCargo: preset?.firmanteCargo || certificado.firmanteCargo || '',
     firmanteDocumento: preset?.firmanteDocumento || certificado.firmanteDocumento || '',
-    // firmanteTelefono: certificado.firmanteTelefono || preset?.firmanteTelefono || '',
-    firmanteTelefono: '',
+    firmanteTelefono: certificado.firmanteTelefono || preset?.firmanteTelefono || '',
     firmaImagen: preset?.firmaImagen || '',
     selloImagen: preset?.selloImagen || '',
     papel: certificado.papel || 'a4',
@@ -80,12 +79,15 @@ function toApiPayload(certificado) {
 }
 
 export async function getCertificados(options = {}) {
-  const { take = 200, skip = 0, search = '', signal } = options
+  const { take = 8, skip = 0, search = '', signal } = options
   const params = new URLSearchParams({ take: String(take), skip: String(skip) })
   if (search.trim()) params.set('search', search.trim())
   const response = await apiGet(`${BASE_URL}?${params.toString()}`, { signal })
   const data = unwrapData(response)
-  return Array.isArray(data) ? data.map(toFrontendCertificado) : []
+  return {
+    items: Array.isArray(data) ? data.map(toFrontendCertificado) : [],
+    total: Number(response?.meta?.total ?? (Array.isArray(data) ? data.length : 0)),
+  }
 }
 
 export async function createCertificado(certificado, fetchOptions = {}) {

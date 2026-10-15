@@ -16,7 +16,7 @@ import './certificados.css'
 const { Title, Text } = Typography
 
 export default function CertificadosPage() {
-  const { certificados, loading, error, saveCertificado, deleteCertificado } = useCertificados()
+  const { certificados, total, loading, error, query, setQuery, saveCertificado, deleteCertificado } = useCertificados()
   const location = useLocation()
   const navigate = useNavigate()
   const [view, setView] = useState('crear')
@@ -121,7 +121,7 @@ export default function CertificadosPage() {
         <div className="certificados-preview-heading"><div><Text strong>Vista previa</Text><br /><Text type="secondary">Certificado de garantía</Text></div><Space wrap><Button icon={<FileWordOutlined />} disabled={!draft.clienteEntidad} onClick={() => word(draft)}>Word</Button><Button icon={<FilePdfOutlined />} disabled={!draft.clienteEntidad} onClick={() => handlePdfDownload(draft)}>PDF</Button></Space></div>
         <div className="certificados-preview-scroll"><CertificadoPreview certificado={draft} /></div>
       </aside>
-    </div> : <Card title="Historial de certificados" loading={loading} variant="borderless"><CertificadosHistory certificados={certificados} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={handlePdfDownload} onView={setViewing} onWord={word} /></Card>}
+    </div> : <Card title="Historial de certificados" loading={loading} variant="borderless"><CertificadosHistory certificados={certificados} total={total} loading={loading} query={query} setQuery={setQuery} onDelete={remove} onDuplicate={duplicate} onEdit={edit} onPdf={handlePdfDownload} onView={setViewing} onWord={word} /></Card>}
 
     <Modal title="Vista previa del certificado" open={Boolean(viewing)} onCancel={() => setViewing(null)} width={960} footer={viewing ? <Button type="primary" icon={<FilePdfOutlined />} onClick={() => handlePdfDownload(viewing)}>Descargar PDF</Button> : null}>
       {viewing && <div className="certificado-modal-preview"><CertificadoPreview certificado={viewing} /></div>}
