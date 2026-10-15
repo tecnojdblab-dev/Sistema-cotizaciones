@@ -1,0 +1,41 @@
+diff --git a/node_modules/html2canvas/dist/html2canvas.esm.js b/node_modules/html2canvas/dist/html2canvas.esm.js
+index 268e9bc..ac34956 100644
+--- a/node_modules/html2canvas/dist/html2canvas.esm.js
++++ b/node_modules/html2canvas/dist/html2canvas.esm.js
+@@ -5259,12 +5259,11 @@ var DocumentCloner = /** @class */ (function () {
+                 }
+             });
+         }); });
+-        documentClone.open();
+-        documentClone.write(serializeDoctype(document.doctype) + "<html></html>");
+-        // Chrome scrolls the parent document for some reason after the write to the cloned window???
+         restoreOwnerScroll(this.referenceElement.ownerDocument, scrollX, scrollY);
+         documentClone.replaceChild(documentClone.adoptNode(this.documentElement), documentClone.documentElement);
+-        documentClone.close();
++        var base = documentClone.createElement('base');
++        base.href = ownerDocument.location.href;
++        documentClone.head.insertBefore(base, documentClone.head.firstChild);
+         return iframeLoad;
+     };
+     DocumentCloner.prototype.createElementClone = function (node) {
+diff --git a/node_modules/html2canvas/dist/html2canvas.js b/node_modules/html2canvas/dist/html2canvas.js
+index 3ec00e0..f3567eb 100644
+--- a/node_modules/html2canvas/dist/html2canvas.js
++++ b/node_modules/html2canvas/dist/html2canvas.js
+@@ -5265,12 +5265,11 @@
+                     }
+                 });
+             }); });
+-            documentClone.open();
+-            documentClone.write(serializeDoctype(document.doctype) + "<html></html>");
+-            // Chrome scrolls the parent document for some reason after the write to the cloned window???
+             restoreOwnerScroll(this.referenceElement.ownerDocument, scrollX, scrollY);
+-            documentClone.replaceChild(documentClone.adoptNode(this.documentElement), documentClone.documentElement);
+-            documentClone.close();
++        documentClone.replaceChild(documentClone.adoptNode(this.documentElement), documentClone.documentElement);
++        var base = documentClone.createElement('base');
++        base.href = ownerDocument.location.href;
++        documentClone.head.insertBefore(base, documentClone.head.firstChild);
+             return iframeLoad;
+         };
+         DocumentCloner.prototype.createElementClone = function (node) {
