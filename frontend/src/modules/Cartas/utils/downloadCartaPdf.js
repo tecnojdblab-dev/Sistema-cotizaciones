@@ -89,25 +89,31 @@ function drawPageFooter(pdf, pageWidth, pageHeight) {
 }
 
 function triggerPdfDownload(pdf, filename) {
-  try {
-    pdf.save(filename)
-    return
-  } catch {
-    // no-op: fallback below for browsers that block direct save calls
-  }
-
+  console.info('[PDF] Preparando descarga:', filename)
   const blob = pdf.output('blob')
+  if (!blob) throw new Error('No se pudo generar el archivo PDF')
+
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
   link.download = filename
   link.rel = 'noopener'
+  link.style.display = 'none'
+  // El ancla DEBE estar montada en el DOM. El save() interno de jsPDF pulsa un
+  // <a> desconectado y algunos navegadores lo ignoran en silencio, sobre todo
+  // cuando pasa tiempo desde el clic (el caso de la app desplegada).
   document.body.appendChild(link)
-  link.click()
+
+  try {
+    link.click()
+  } catch {
+    link.dispatchEvent(new MouseEvent('click', { bubbles: false, cancelable: true, view: window }))
+  }
+
   setTimeout(() => {
     URL.revokeObjectURL(url)
     link.remove()
-  }, 1500)
+  }, 4000)
 }
 
 function getProtectedRanges(previewElement, scale) {
